@@ -89,13 +89,14 @@ Setup --> RenderObjects ----> PostPro --> Present
 		//		while !bExit
 		//			Wait on mStartWorkEvent
 		//			while current_item_index < work_queue.size
-		//				work_index = work_queue[current_item_index].current_work_index.fetch_sub(1);
+		//				item_index = current_item_index
+		//				work_index = work_queue[item_index].current_work_index.fetch_sub(1);
 		//				if work_index < 0 
 		//					continue // Someone got a 0, so keep looping until that thread sets everything up
 		//				else if work_index == 0
-		//					current_item_index.atomic_add(1) 
+		//					item_index = current_item_index.fetch_add(1) + 1 
 		//				
-		//				node = work_queue[current_item_index].node
+		//				node = work_queue[item_index].node
 		//				Call mBody with the worker CL and c index
 		//				if work_index == 0
 		//					for dependent_node in node->mDependentNodes
