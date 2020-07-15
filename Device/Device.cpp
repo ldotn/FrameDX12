@@ -18,6 +18,13 @@ Device::Device(Window* window_ptr, int adapter_index) :
 		ComPtr<ID3D12Debug> debug_controller;
 		ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller)));
 		debug_controller->EnableDebugLayer();
+
+		CComPtr<ID3D12DeviceRemovedExtendedDataSettings> dred_settings;
+		VERIFY_SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&dred_settings)));
+
+		// Turn on auto-breadcrumbs and page fault reporting.
+		dred_settings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+		dred_settings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
 	}
 #endif
 
@@ -47,7 +54,6 @@ Device::Device(Window* window_ptr, int adapter_index) :
 		}
 
 		wcout << L"Select GPU : ";
-		int adapterIDX = 0;
 		cin >> adapter_index;
 	}
 

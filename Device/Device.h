@@ -4,6 +4,8 @@
 
 namespace FrameDX12
 {
+	enum class QueueType { Graphics, Compute, Copy };
+
 	class Device
 	{
 	public:
@@ -46,6 +48,28 @@ namespace FrameDX12
 
 		// Returns the highest device version supported
 		int GetDeviceVersion() const { return mDeviceVersion; }
+
+		// Returns a raw (weak) pointer to the required queue
+		ID3D12CommandQueue* GetQueue(QueueType type) const
+		{
+			if (type == QueueType::Graphics)
+				return mGraphicsCQ.Get();
+			else if (type == QueueType::Compute)
+				return mComputeCQ.Get();
+			else if (type == QueueType::Copy)
+				return mCopyCQ.Get();
+		}
+
+		// Returns a raw (weak) pointer to the required CL pool
+		CommandListPool* GetCLPool(QueueType type)
+		{
+			if (type == QueueType::Graphics)
+				return &mGraphicsCLPool;
+			else if (type == QueueType::Compute)
+				return &mComputeCLPool;
+			else if (type == QueueType::Copy)
+				return &mCopyCLPool;
+		}
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Device> mD3DDevice;
 		int mDeviceVersion;

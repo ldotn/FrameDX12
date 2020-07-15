@@ -4,6 +4,13 @@
 
 namespace FrameDX12
 {
+	
+
+	// TODO : DELETE THIS!
+	// It's not really useful
+
+
+
 	class CommandListPool
 	{
 	public:
@@ -23,6 +30,7 @@ namespace FrameDX12
 			{
 				if (!CL->IsOpen)
 				{
+					// TODO : Ensure that ExecuteCommandList was called before reusing the CL
 					CL->IsOpen = true;
 					ThrowIfFailed(mCommandListPtr->List->Reset(mCommandListPtr->AllocatorPtr, InitialState));
 				}
@@ -38,6 +46,8 @@ namespace FrameDX12
 			{ 
 				return mCommandListPtr->List.Get(); 
 			}
+
+			ID3D12GraphicsCommandList* get() const { return mCommandListPtr->List.Get(); }
 		private:
 			CommandList* mCommandListPtr = nullptr;
 		};
@@ -50,14 +60,15 @@ namespace FrameDX12
 		// Fetches a command list from the pool in a thread safe fashion
 		// TargetSize - The approximate expected number of elements. Used to select the allocator
 		// InitialState - The initial pipeline state
-		CLWrapper FetchCommandList(class Device* DevicePtr, uint32_t TargetSize, ID3D12PipelineState* InitialState);
+		CLWrapper FetchCommandList(class Device* DevicePtr, uint32_t TargetSize, ID3D12PipelineState* InitialState = nullptr);
 
 		// Alternates to the set of allocators for the next frame and resets the current set of allocators
 		// On debug it checks that there are no live CLWrappers
 		// Reset and bookkeeping for the prev frame are async
 		// IMPORTANT! NO CL CAN BE RECORDING BEFORE THIS FUNCTION RETURNS! YOU CAN'T CALL FetchCommandList BEFORE THIS RETURNS!
+		// TODO : There is no need to only flush at the end, you can do flushes in between and reuse allocators
 		void AdvanceFrame();
-		
+
 		enum class AllocatorTargetSize { Small, Medium, Large, Huge, COUNT};
 		static constexpr int cAllocatorSizes = (int)AllocatorTargetSize::COUNT;
 	private:

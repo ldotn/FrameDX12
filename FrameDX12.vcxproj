@@ -25,12 +25,14 @@
     <ClInclude Include="Core\stdafx.h" />
     <ClInclude Include="Core\Utils.h" />
     <ClInclude Include="Core\Window.h" />
+    <ClInclude Include="Device\CommandGraph.h" />
     <ClInclude Include="Device\CommandListPool.h" />
     <ClInclude Include="Device\Device.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Log.cpp" />
     <ClCompile Include="Core\Window.cpp" />
+    <ClCompile Include="Device\CommandGraph.cpp" />
     <ClCompile Include="Device\CommandListPool.cpp" />
     <ClCompile Include="Device\Device.cpp" />
   </ItemGroup>

@@ -5,7 +5,7 @@ namespace FrameDX12
 {
 	// Loops and calls f, while trying to keep all iterations of the same duration
 	// SHOULD NOT BE ASSUMED TO BE ACCURATE!!!
-	// It relays on this_thread::sleep_for, so it's only as accurate as sleep_for is
+	// It relies on this_thread::sleep_for, so it's only as accurate as sleep_for is
 	// Can be interrupted
 	// Allows the use of generic std::function functions, which is a big limitation of Win32 timers
 	// A quick test based on the log printer loop of the test app gives the following results
@@ -71,4 +71,40 @@ namespace FrameDX12
 #define ONCE_INNER(lambda, n0, n1) static struct once_wrapper_##n0##n1 { once_wrapper_##n0##n1(std::function<void()> f){ f(); }} once_wrapper_var_##n0##n1(lambda);
 #define ONCE_EXPAND(lambda, n0, n1) ONCE_INNER(lambda,n0,n1)
 #define ONCE(lambda) ONCE_EXPAND(lambda, __COUNTER__, __LINE__ )
+
+	// Wrapper for an index reference to an entry on a std::vector
+	// Ideally the optimizer will inline this calls and it should be 0 cost
+	template<typename T>
+	class VecRef
+	{
+	public:
+		VecRef(size_t index, std::vector<T>& vec) :
+			mVec(vec),
+			mIndex(index)
+		{
+		}
+
+		T& operator*()
+		{
+			return mVec[mIndex];
+		}
+
+		T& operator->() 
+		{
+			return mVec[mIndex];
+		}
+
+		const T& operator*() const
+		{
+			return mVec[mIndex];
+		}
+
+		const T& operator->() const
+		{
+			return mVec[mIndex];
+		}
+	private:
+		std::vector<T>& mVec;
+		size_t mIndex;
+	};
 }

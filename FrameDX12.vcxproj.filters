@@ -34,6 +34,9 @@
     <ClInclude Include="Device\CommandListPool.h">
       <Filter>Device</Filter>
     </ClInclude>
+    <ClInclude Include="Device\CommandGraph.h">
+      <Filter>Device</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Log.cpp">
@@ -45,6 +48,11 @@
     <ClCompile Include="Device\Device.cpp">
       <Filter>Device</Filter>
     </ClCompile>
-    <ClCompile Include="Device\CommandListPool.cpp" />
+    <ClCompile Include="Device\CommandGraph.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Device\CommandListPool.cpp">
+      <Filter>Device</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
