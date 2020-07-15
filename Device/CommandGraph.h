@@ -94,7 +94,7 @@ Setup --> RenderObjects ----> PostPro --> Present
 		//				if work_index < 0 
 		//					continue // Someone got a 0, so keep looping until that thread sets everything up
 		//				else if work_index == 0
-		//					item_index = current_item_index.fetch_add(1) + 1 
+		//					item_index = current_item_index.fetch_add(1) // Advance so the next thread works in the next item
 		//				
 		//				node = work_queue[item_index].node
 		//				Call mBody with the worker CL and c index
