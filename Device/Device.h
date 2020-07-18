@@ -115,21 +115,21 @@ namespace FrameDX12
 				return -1;
 		}
 
-		Microsoft::WRL::ComPtr<ID3D12Device> mD3DDevice;
+		ComPtr<ID3D12Device> mD3DDevice;
 		int mDeviceVersion;
 
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> mGraphicsQueue;
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> mComputeQueue;
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> mCopyQueue;
+		ComPtr<ID3D12CommandQueue> mGraphicsQueue;
+		ComPtr<ID3D12CommandQueue> mComputeQueue;
+		ComPtr<ID3D12CommandQueue> mCopyQueue;
 
 		struct
 		{
-			Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+			ComPtr<ID3D12Fence> fence;
 			UINT64 value;
 			HANDLE sync_event;
 		} mFences[3];
 
-		Microsoft::WRL::ComPtr<IDXGISwapChain> mSwapChain;
+		ComPtr<IDXGISwapChain> mSwapChain;
 		int mSwapChainVersion;
 	};
 }

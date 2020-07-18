@@ -28,3 +28,6 @@
 #include "enumerate.h"
 #include "zip.h"
 #include <mutex>
+
+template<typename T>
+using ComPtr = Microsoft::WRL::ComPtr<T>;

@@ -1,7 +1,7 @@
 #pragma once
 #include "../Core/stdafx.h"
 #include "Device.h"
-#include "../Core/BufferedResource.h"
+#include "../Resources/BufferedResource.h"
 
 namespace FrameDX12
 {
@@ -61,8 +61,8 @@ Setup --> RenderObjects ----> PostPro --> Present
           ComputeEnv    --/
  	*/
 
-	typedef Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> DXCommmandList;
-	typedef Microsoft::WRL::ComPtr<ID3D12CommandAllocator> DXCommandAllocator;
+	typedef ComPtr<ID3D12GraphicsCommandList> DXCommmandList;
+	typedef ComPtr<ID3D12CommandAllocator> DXCommandAllocator;
 
 	// TODO : Support nodes with dependencies from different queues, for now they need to be on the same queue
 	//		  Having different queues means you are forced to do a ExecuteCommandLists and put a fence
@@ -167,5 +167,6 @@ Setup --> RenderObjects ----> PostPro --> Present
 		std::atomic<int> mCurrentItemIndex;
 		size_t mWorkQueueSize;
 		std::mutex mLock;
+		bool mCloseWorkers;
 	};
 }

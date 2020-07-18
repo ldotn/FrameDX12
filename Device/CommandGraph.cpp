@@ -60,7 +60,8 @@ void CommandGraph::InternalNode::Execute(CommandGraph* graph)
 CommandGraph::CommandGraph(size_t num_workers, QueueType type, Device* device_ptr) :
 	mType(type),
 	mWorkerFinishedEvents(num_workers),
-	mStartWorkEvents(num_workers)
+	mStartWorkEvents(num_workers),
+	mCloseWorkers(false)
 {
 	//mStartWorkEvent = CreateEvent(NULL,FALSE,FALSE,NULL);
 
@@ -94,6 +95,9 @@ CommandGraph::CommandGraph(size_t num_workers, QueueType type, Device* device_pt
 			while (true)
 			{
 				WaitForSingleObject(mStartWorkEvents[worker_id], INFINITE);
+
+				if (mCloseWorkers)
+					break;
 
 				while (true)
 				{
@@ -146,7 +150,9 @@ void CommandGraph::Build(Device* device)
 {
 	using namespace std;
 
-	mNodes = new Node[mNamedNodes.size()];
+	mNodesCount = mNamedNodes.size();
+	mNodes = new Node[mNodesCount];
+	mWorkQueue = new WorkItem[mNodesCount]; // Reserve max capacity
 
 	unordered_map<string, size_t> name_index_map;
 	size_t node_idx = 0;
@@ -183,9 +189,6 @@ void CommandGraph::Build(Device* device)
 			}
 		}
 	}
-
-	// Reserve max capacity
-	mWorkQueue = new WorkItem[mNodesCount]; 
 
 	// No longer necessary
 	mNamedNodes.clear();
@@ -248,6 +251,10 @@ void CommandGraph::Execute(Device* device, ID3D12PipelineState* initial_state)
 
 CommandGraph::~CommandGraph()
 {
+	mCloseWorkers = true;
+	for (HANDLE event : mStartWorkEvents) SetEvent(event);
+	for (auto& thread : mWorkers) thread.join();
+
 	delete[] mNodes;
 	delete[] mWorkQueue;
 	delete[] mRawCommandLists;

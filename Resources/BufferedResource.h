@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include "../Core/stdafx.h"
 
 namespace FrameDX12
 {
@@ -10,14 +10,18 @@ namespace FrameDX12
 	class BufferedResource
 	{
 	public:
-
-
 		BufferedResource() = default;
 		BufferedResource(const BufferedResource&) = default;
 		BufferedResource(BufferedResource&&) = default;
 		BufferedResource(std::function<Type(uint8_t)> constructor)
 		{
-			for (uint8_t i = 0; i < kResourceBufferCount; i++) mResource[i] = constructor(i);
+			Construct(constructor);
+		}
+
+		void Construct(std::function<Type(uint8_t)> constructor)
+		{
+			for (uint8_t i = 0; i < kResourceBufferCount; i++) 
+				mResource[i] = constructor(i);
 		}
 
 		Type& operator*()

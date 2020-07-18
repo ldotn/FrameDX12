@@ -8,6 +8,9 @@
     <Filter Include="Device">
       <UniqueIdentifier>{9400bd6c-45ae-4449-994a-1e6528a4556c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{96201013-06d1-47f4-a675-ca338676d436}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\stdafx.h">
@@ -37,8 +40,11 @@
     <ClInclude Include="Device\CommandGraph.h">
       <Filter>Device</Filter>
     </ClInclude>
-    <ClInclude Include="Core\BufferedResource.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="Resources\BufferedResource.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\Texture.h">
+      <Filter>Resources</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -60,5 +66,6 @@
     <ClCompile Include="Core\StaticDefinitions.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="Resources\Texture.cpp" />
   </ItemGroup>
 </Project>

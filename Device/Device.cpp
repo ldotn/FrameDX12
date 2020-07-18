@@ -1,7 +1,7 @@
 #include "Device.h"
 #include "../Core/Log.h"
 #include <iostream>
-#include "../Core/BufferedResource.h"
+#include "../Resources/BufferedResource.h"
 #include "../Core/Window.h"
 
 using namespace FrameDX12;
@@ -9,7 +9,6 @@ using namespace FrameDX12;
 Device::Device(Window* window_ptr, int adapter_index)
 {
 	using namespace std;
-	using namespace Microsoft::WRL;
 
 #if defined(DEBUG) || defined(_DEBUG) 
 	// Enable the D3D12 debug layer.
@@ -127,7 +126,7 @@ Device::Device(Window* window_ptr, int adapter_index)
 	swapChainDesc.BufferCount = kResourceBufferCount;
 	swapChainDesc.BufferDesc.Width = window_ptr->GetSizeX();
 	swapChainDesc.BufferDesc.Height = window_ptr->GetSizeY();
-	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // TODO : Expose!
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc.OutputWindow = window_ptr->GetHandle();
@@ -169,6 +168,9 @@ void Device::SignalQueueWork(QueueType queue)
 void Device::WaitForQueue(QueueType queue)
 {
 	auto& fence = mFences[QueueTypeToIndex(queue)];
-	ThrowIfFailed(fence.fence->SetEventOnCompletion(fence.value - 1, fence.sync_event));
-	WaitForSingleObject(fence.sync_event, INFINITE);
+	if (fence.fence->GetCompletedValue() < fence.value - 1)
+	{
+		ThrowIfFailed(fence.fence->SetEventOnCompletion(fence.value - 1, fence.sync_event));
+		WaitForSingleObject(fence.sync_event, INFINITE);
+	}
 }

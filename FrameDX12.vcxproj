@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Core\BufferedResource.h" />
     <ClInclude Include="Core\d3dx12.h" />
     <ClInclude Include="Core\Error.h" />
     <ClInclude Include="Core\Log.h" />
@@ -29,6 +28,8 @@
     <ClInclude Include="Device\CommandGraph.h" />
     <ClInclude Include="Device\CommandListPool.h" />
     <ClInclude Include="Device\Device.h" />
+    <ClInclude Include="Resources\BufferedResource.h" />
+    <ClInclude Include="Resources\Texture.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Log.cpp" />
@@ -37,6 +38,7 @@
     <ClCompile Include="Device\CommandGraph.cpp" />
     <ClCompile Include="Device\CommandListPool.cpp" />
     <ClCompile Include="Device\Device.cpp" />
+    <ClCompile Include="Resources\Texture.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
