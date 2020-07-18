@@ -1,21 +1,26 @@
 #pragma once
 #include "../Core/stdafx.h"
-#include "CommandListPool.h"
 
 namespace FrameDX12
 {
-	enum class QueueType { Graphics, Compute, Copy };
+	enum class QueueType 
+	{ 
+		Graphics = D3D12_COMMAND_LIST_TYPE_DIRECT, 
+		Compute = D3D12_COMMAND_LIST_TYPE_COMPUTE, 
+		Copy = D3D12_COMMAND_LIST_TYPE_COPY
+	};
 
 	class Device
 	{
 	public:
 		// Constructs the device
-		// WindowPtr - The pointer to the window for which to create the swapchain. If null no swapchain will be created.
-		// AdapterIndex - The index of the adapter to use. If -1 all adapters will be listed and the user will be asked to choose one.
-		Device(class Window* WindowPtr, int AdapterIndex = 0);
+		// window_ptr - The pointer to the window for which to create the swapchain. If null no swapchain will be created.
+		// adapter_index - The index of the adapter to use. If -1 all adapters will be listed and the user will be asked to choose one.
+		Device(class Window* window_ptr, int adapter_index = 0);
 
 		// Gets a weak (raw) pointer to the device
 		ID3D12Device* GetDevice() const { return mD3DDevice.Get(); }
+
 		// Same as GetDevice but allows to specify the version. You should check first that the required version is supported
 		template<int Version>
 		auto GetDevice() const
@@ -46,39 +51,85 @@ namespace FrameDX12
 			}
 		}
 
-		// Returns the highest device version supported
+		// Gets a weak (raw) pointer to the swap chain
+		IDXGISwapChain* GetSwapChain() const { return mSwapChain.Get(); }
+
+		// Same as GetSwapChain but allows to specify the version. You should check first that the required version is supported
+		template<int Version>
+		auto GetSwapChain() const
+		{
+			if constexpr (Version == 0)
+			{
+				return (ID3D12Device*)mSwapChain.Get();
+			}
+			else if constexpr (Version == 1)
+			{
+				return (IDXGISwapChain1*)mSwapChain.Get();
+			}
+			else if constexpr (Version == 2)
+			{
+				return (IDXGISwapChain2*)mSwapChain.Get();
+			}
+			else if constexpr (Version == 3)
+			{
+				return (IDXGISwapChain3*)mSwapChain.Get();
+			}
+		}
+
+
+		// Returns the highest version supported
 		int GetDeviceVersion() const { return mDeviceVersion; }
+		int GetSwapChainVersion() const { return mSwapChainVersion; }
 
 		// Returns a raw (weak) pointer to the required queue
 		ID3D12CommandQueue* GetQueue(QueueType type) const
 		{
-			if (type == QueueType::Graphics)
-				return mGraphicsCQ.Get();
-			else if (type == QueueType::Compute)
-				return mComputeCQ.Get();
-			else if (type == QueueType::Copy)
-				return mCopyCQ.Get();
+			switch (type)
+			{
+			case QueueType::Graphics:
+				return mGraphicsQueue.Get();
+			case QueueType::Compute:
+				return mComputeQueue.Get();
+			case QueueType::Copy:
+				return mCopyQueue.Get();
+			default:
+					return nullptr;
+			}
 		}
 
-		// Returns a raw (weak) pointer to the required CL pool
-		CommandListPool* GetCLPool(QueueType type)
+		// Signals the fence of the queue and increases the value
+		void SignalQueueWork(QueueType queue);
+
+		// Waits for the queue to finish
+		void WaitForQueue(QueueType queue);
+	private:
+		int QueueTypeToIndex(QueueType type) const
 		{
 			if (type == QueueType::Graphics)
-				return &mGraphicsCLPool;
+				return 0;
 			else if (type == QueueType::Compute)
-				return &mComputeCLPool;
+				return 1;
 			else if (type == QueueType::Copy)
-				return &mCopyCLPool;
+				return 2;
+			else
+				return -1;
 		}
-	private:
+
 		Microsoft::WRL::ComPtr<ID3D12Device> mD3DDevice;
 		int mDeviceVersion;
 
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> mGraphicsCQ;
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> mComputeCQ;
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> mCopyCQ;
-		CommandListPool mGraphicsCLPool;
-		CommandListPool mComputeCLPool;
-		CommandListPool mCopyCLPool;
+		Microsoft::WRL::ComPtr<ID3D12CommandQueue> mGraphicsQueue;
+		Microsoft::WRL::ComPtr<ID3D12CommandQueue> mComputeQueue;
+		Microsoft::WRL::ComPtr<ID3D12CommandQueue> mCopyQueue;
+
+		struct
+		{
+			Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+			UINT64 value;
+			HANDLE sync_event;
+		} mFences[3];
+
+		Microsoft::WRL::ComPtr<IDXGISwapChain> mSwapChain;
+		int mSwapChainVersion;
 	};
 }

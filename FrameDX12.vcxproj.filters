@@ -37,6 +37,9 @@
     <ClInclude Include="Device\CommandGraph.h">
       <Filter>Device</Filter>
     </ClInclude>
+    <ClInclude Include="Core\BufferedResource.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Log.cpp">
@@ -53,6 +56,9 @@
     </ClCompile>
     <ClCompile Include="Device\CommandListPool.cpp">
       <Filter>Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\StaticDefinitions.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

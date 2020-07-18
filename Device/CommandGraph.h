@@ -1,7 +1,7 @@
 #pragma once
 #include "../Core/stdafx.h"
-#include "CommandListPool.h"
 #include "Device.h"
+#include "../Core/BufferedResource.h"
 
 namespace FrameDX12
 {
@@ -64,23 +64,30 @@ Setup --> RenderObjects ----> PostPro --> Present
 	typedef Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> DXCommmandList;
 	typedef Microsoft::WRL::ComPtr<ID3D12CommandAllocator> DXCommandAllocator;
 
+	// TODO : Support nodes with dependencies from different queues, for now they need to be on the same queue
+	//		  Having different queues means you are forced to do a ExecuteCommandLists and put a fence
+	//		  And have different CLs
+	// NOTE : THIS CLASS IS NOT THREAD SAFE
 	class CommandGraph
 	{
 	public:
-		CommandGraph(size_t num_workers);
-
-		// The node body returns an estimative of the number of commands added to the list and takes as input the command list and repeat index
-		// TODO : Support nodes with dependencies from different queues, for now they need to be on the same queue
-		//		  Having different queues means you are forced to do a ExecuteCommandLists and put a fence
-		void AddNode(QueueType type, const char* name, std::function<uint32_t(ID3D12GraphicsCommandList*, uint32_t)> node_body, std::vector<const char*> dependencies, uint32_t repeats);
+		CommandGraph(size_t num_workers, QueueType type, Device* device_ptr);
+		~CommandGraph();
+		
+		// TODO : Take into account the estimated number of commands on the lists for CL reuse
+		//			The way the CLs are filled might not make it neccessary though
+		void AddNode(std::string name, std::function<void(ID3D12GraphicsCommandList*, uint32_t)> node_body, std::vector<std::string> dependencies, uint32_t repeats = 1);
 		
 		// Does the following
-		// - Finds all the nodes without dependencies and adds them to mStartingNodes
-		// - Updates the nodes filling mDependentNodes with the pointers to nodes that depend on the node
+		// - Fill mNodes and mStartingNodes
+		// - Update the nodes filling dependent_nodes with the pointers to nodes that depend on the node
+		// - Update the nodes filling dependencies
+		// - Clear mNameMap
 		void Build(Device* device);
 
 		// Does the following
 		//  Reset mNumReadyDependencies to 0 on all nodes
+		//  Reset all command lists and allocators (remember allocators are buffered so you only reset the current ones)
 		//  Initialize the work queue with mStartingNodes (current index = mRepeats - 1 for each work item)
 		//  next_work_queue = {}
 		//  while work_queue.size > 0
@@ -112,28 +119,53 @@ Setup --> RenderObjects ----> PostPro --> Present
 		// If the nodes have very different workloads this is not the most efficient as you are waiting for an entire graph level to finish before moving to the next
 		// The problem with adding the nodes to the work queue as soon as their dependencies finish is that you need to force stop all threads, do and execute, reset the CLs and continue writing
 		// For now let's keep it "simple" and do it like this
-		void Execute(Device * device);
-
-		// Halts CPU execution until the whole graph has finished
-		void WaitUntilFinished();
+		//
+		//		IMPORTANT NOTE : This doesn't wait for the GPU to finish unless it ran out of buffered allocators
+		//
+		void Execute(Device * device, ID3D12PipelineState* initial_state = nullptr);
 	private:
+		QueueType mType;
+
 		// One per worker
+		ID3D12CommandList** mRawCommandLists; // Non-owner array of pointers to the CLs
 		std::vector<DXCommmandList> mCommandLists; // Don't need to buffer command lists as you reset them at the start of Execute
-		std::vector<BufferedResource<DXCommandAllocator>>    mCommandAllocators; // Need to be buffered as you may not be waiting between executes
+		std::vector<BufferedResource<DXCommandAllocator>> mCommandAllocators; // Need to be buffered as you may not be waiting between executes
 
 		struct Node
 		{
-			uint32_t mRepeats;
-			std::function<uint32_t(ID3D12GraphicsCommandList*)> mBody;
-			QueueType mType;
-			std::vector<Node*> mDependencies; // Think the vector is not needed, the count should be enough...
-			std::vector<Node*> mDependentNodes;
-			std::atomic<int> mNumReadyDependencies;
+			uint32_t repeats;
+			std::function<void(ID3D12GraphicsCommandList*, uint32_t)> body;
+			std::vector<Node*> dependencies; // Think the vector is not needed, the count should be enough...
+			std::vector<Node*> dependent_nodes;
+			std::atomic<int> num_ready_dependencies;
 		};
 
 		std::vector<Node*> mStartingNodes; // Nodes without dependencies
-		std::vector<Node> mNodes;
+		size_t mNodesCount;
+		Node* mNodes;
 
-		HANDLE mStartWorkEvent;
+		// Used during construction only, cleared after Build is called
+		struct ConstructionNode
+		{
+			std::function<void(ID3D12GraphicsCommandList*, uint32_t)> body;
+			std::vector<std::string> dependencies;
+			uint32_t repeats;
+		};
+		std::unordered_map<std::string, ConstructionNode> mNamedNodes;
+
+		struct WorkItem
+		{
+			Node* node_ptr;
+			std::atomic<int> current_work_index = 0;
+		};
+		WorkItem* mWorkQueue;
+		std::vector<Node*> mNextWorkQueue;
+
+		std::vector<HANDLE> mStartWorkEvents;
+		std::vector<HANDLE> mWorkerFinishedEvents;
+		std::vector<std::thread> mWorkers;
+		std::atomic<int> mCurrentItemIndex;
+		size_t mWorkQueueSize;
+		std::mutex mLock;
 	};
 }

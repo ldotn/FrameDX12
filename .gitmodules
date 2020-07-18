@@ -1,0 +1,3 @@
+[submodule "FPlusPlus"]
+	path = FPlusPlus
+	url = https://github.com/RyanTorant/FPlusPlus.git

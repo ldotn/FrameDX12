@@ -1,3 +1,4 @@
+#if 0
 #include "CommandListPool.h"
 #include "../Core/Log.h"
 #include "Device.h"
@@ -99,3 +100,4 @@ void CommandListPool::AdvanceFrame()
 		}
 	});
 }
+#endif

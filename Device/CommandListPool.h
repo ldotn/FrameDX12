@@ -1,4 +1,5 @@
 #pragma once
+#if 0
 #include "../Core/stdafx.h"
 #include "../Core/Log.h"
 
@@ -88,3 +89,4 @@ namespace FrameDX12
 		int mCurrentAllocatorSet = 0;
 	};
 }
+#endif

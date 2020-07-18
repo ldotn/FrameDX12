@@ -1,13 +1,12 @@
 #include "Device.h"
 #include "../Core/Log.h"
 #include <iostream>
+#include "../Core/BufferedResource.h"
+#include "../Core/Window.h"
 
 using namespace FrameDX12;
 
-Device::Device(Window* window_ptr, int adapter_index) :
-	mGraphicsCLPool(D3D12_COMMAND_LIST_TYPE_DIRECT),
-	mComputeCLPool(D3D12_COMMAND_LIST_TYPE_COMPUTE),
-	mCopyCLPool(D3D12_COMMAND_LIST_TYPE_COPY)
+Device::Device(Window* window_ptr, int adapter_index)
 {
 	using namespace std;
 	using namespace Microsoft::WRL;
@@ -19,8 +18,8 @@ Device::Device(Window* window_ptr, int adapter_index) :
 		ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller)));
 		debug_controller->EnableDebugLayer();
 
-		CComPtr<ID3D12DeviceRemovedExtendedDataSettings> dred_settings;
-		VERIFY_SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&dred_settings)));
+		ComPtr<ID3D12DeviceRemovedExtendedDataSettings> dred_settings;
+		ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&dred_settings)));
 
 		// Turn on auto-breadcrumbs and page fault reporting.
 		dred_settings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
@@ -107,11 +106,69 @@ Device::Device(Window* window_ptr, int adapter_index) :
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	ThrowIfFailed(mD3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mGraphicsCQ)));
+	ThrowIfFailed(mD3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mGraphicsQueue)));
 
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-	ThrowIfFailed(mD3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mComputeCQ)));
+	ThrowIfFailed(mD3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mComputeQueue)));
 
 	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
-	ThrowIfFailed(mD3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCopyCQ)));
+	ThrowIfFailed(mD3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCopyQueue)));
+
+	// Create fences
+	for (auto& [fence, value, sync_event] : mFences)
+	{
+		value = 0;
+		ThrowIfFailed(mD3DDevice->CreateFence(value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+		sync_event = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
+	}
+
+	// Describe and create the swap chain.
+	DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
+	swapChainDesc.BufferCount = kResourceBufferCount;
+	swapChainDesc.BufferDesc.Width = window_ptr->GetSizeX();
+	swapChainDesc.BufferDesc.Height = window_ptr->GetSizeY();
+	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	swapChainDesc.OutputWindow = window_ptr->GetHandle();
+	swapChainDesc.SampleDesc.Count = 1;
+	swapChainDesc.Windowed = !window_ptr->IsFullscreen();
+
+	ThrowIfFailed(factory->CreateSwapChain(
+		mGraphicsQueue.Get(),		// Swap chain needs the queue so that it can force a flush on it.
+		&swapChainDesc,
+		&mSwapChain
+	));
+
+	IDXGISwapChain* new_swapchain;
+	mSwapChainVersion = 0;
+	if (mSwapChain->QueryInterface(__uuidof(IDXGISwapChain3), (void**)&new_swapchain) == S_OK)
+	{
+		mSwapChain = new_swapchain;
+		mDeviceVersion = 3;
+	}
+	else if (mSwapChain->QueryInterface(__uuidof(IDXGISwapChain2), (void**)&new_swapchain) == S_OK)
+	{
+		mSwapChain = new_swapchain;
+		mDeviceVersion = 2;
+	}
+	else if (mSwapChain->QueryInterface(__uuidof(IDXGISwapChain1), (void**)&new_swapchain) == S_OK)
+	{
+		mSwapChain = new_swapchain;
+		mDeviceVersion = 1;
+	}
+}
+
+void Device::SignalQueueWork(QueueType queue)
+{
+	auto& fence = mFences[QueueTypeToIndex(queue)];
+	ThrowIfFailed(GetQueue(queue)->Signal(fence.fence.Get(), fence.value));
+	fence.value++;
+}
+
+void Device::WaitForQueue(QueueType queue)
+{
+	auto& fence = mFences[QueueTypeToIndex(queue)];
+	ThrowIfFailed(fence.fence->SetEventOnCompletion(fence.value - 1, fence.sync_event));
+	WaitForSingleObject(fence.sync_event, INFINITE);
 }

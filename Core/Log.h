@@ -29,7 +29,7 @@ namespace FrameDX12
 	// Checks an HRESULT/StatusCode and if it's not S_OK it stores to the log (thread safe)
 #define LogCheck(cond,cat) LogCheckEx(cond, cat, ;)
 
-#define LogAssertAndContinue(cond,cat) [&](){ bool b = cond; if(!b) FrameDX12::Log.record_(std::wstring(#cond L" != true (Last Win32 error : ") + FrameDX12::StatusCodeToString(LAST_ERROR) + std::wstring(L")"),cat,__LINE__,MAKE_WIDE(__FUNCTION__),MAKE_WIDE(__FILE__)); return !b; }() 
+#define LogAssertAndContinue(cond,cat) [&](){ bool b = (cond); if(!b) FrameDX12::Log.record_(std::wstring(#cond L" != true (Last Win32 error : ") + FrameDX12::StatusCodeToString(LAST_ERROR) + std::wstring(L")"),cat,__LINE__,MAKE_WIDE(__FUNCTION__),MAKE_WIDE(__FILE__)); return b; }() 
 	// Checks an HRESULT/StatusCode and if it's not S_OK it stores to the log. It returns the HRESULT converted to StatusCode. (thread safe)
 	// Can be used inside an if
 #define LogCheckAndContinue(cond,cat) [&](){auto scode = ( FrameDX12::StatusCode)(cond); if(scode !=  FrameDX12::StatusCode::Ok) { FrameDX12::Log.record_(std::wstring(#cond L" failed with code ") + FrameDX12::StatusCodeToString(scode) ,cat,__LINE__,MAKE_WIDE(__FUNCTION__),MAKE_WIDE(__FILE__));} return scode; }()

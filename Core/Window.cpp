@@ -63,6 +63,8 @@ LRESULT WINAPI Window::InternalMessageProc(HWND hWnd, UINT msg, WPARAM wParam, L
 
 Window::Window(std::wstring Name, std::uint32_t SizeX, std::uint32_t SizeY, bool bFullscreen)
 {
+	mFullscreen = bFullscreen;
+
 	// If no resolution was specified, get it from screen
 	if (SizeX == 0 || SizeY == 0)
 	{
@@ -76,6 +78,9 @@ Window::Window(std::wstring Name, std::uint32_t SizeX, std::uint32_t SizeY, bool
 		SizeY = desktop.bottom;
 	}
 
+	mSizeX = SizeX;
+	mSizeY = SizeY;
+	
 	// Create window
 	// Register the window class
 	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, InternalMessageProc, 0L, 0L,

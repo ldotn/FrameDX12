@@ -22,3 +22,9 @@
 #include <ppl.h>
 #include <concurrent_vector.h>
 #include <future>
+#include <unordered_map>
+#include <algorithm>
+#include <execution>
+#include "enumerate.h"
+#include "zip.h"
+#include <mutex>

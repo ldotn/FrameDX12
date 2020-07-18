@@ -1,8 +1,11 @@
+#define WIN32_LEAN_AND_MEAN // Exclude rarely used stuff from Windows headers
+#define NOMINMAX
 #include <Windows.h>
 #include <crtdbg.h>
 #include "../Core/Log.h"
 #include "../Core/Window.h"
 #include "../Device/Device.h"
+#include "../Device/CommandGraph.h"
 #include <iostream>
 
 using namespace FrameDX12;
@@ -17,22 +20,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     Log.CreateConsole();
     auto print_thread = Log.FirePrintThread();
 
-    std::vector<int> v0{ 10,2,6 };
-
-    VecRef vref(1, v0);
-    auto a = *vref;
-    std::cout << *vref << std::endl;
-
-    std::cout << v0[2] << std::endl;
     // Create the window
     Window win;
 
     // Create the device
     Device dev(&win);
 
-    // Enter the render loop
-    win.CallDuringIdle([](double ElapsedTime)
+    // Create command graph
+    CommandGraph commands(8, QueueType::Graphics, &dev);
+
+    commands.AddNode("Present", [&](ID3D12GraphicsCommandList* cl, uint32_t)
     {
+        dev.GetSwapChain()->Present(0, 0);
+    }, {});
+
+    commands.Build(&dev);
+
+    // Enter the render loop
+    win.CallDuringIdle([&](double ElapsedTime)
+    {
+        commands.Execute(&dev);
+
         return false;
     });
 

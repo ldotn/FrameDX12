@@ -19,12 +19,19 @@ namespace FrameDX12
 
 		// Calls the provided function when there are no messages to process
 		// This is where you would do all your render stuff
-		// It passes the elapsed time (in ms) to the function, and if the function returns false it exits
+		// It passes the elapsed time (in ms) to the function, and if the function returns true it exits
 		void CallDuringIdle(std::function<bool(double)> loop_body);
+
+		uint32_t GetSizeX() const { return mSizeX; }
+		uint32_t GetSizeY() const { return mSizeY; }
+		HWND GetHandle() const { return mWindowHandle; }
+		bool IsFullscreen() const { return mFullscreen; }
 	private:
 		static LRESULT WINAPI InternalMessageProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 		HWND mWindowHandle;
 		std::chrono::time_point<std::chrono::high_resolution_clock> mLastLoopTime;
+		uint32_t mSizeX, mSizeY;
+		bool mFullscreen;
 	};
 }
