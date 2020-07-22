@@ -1,5 +1,6 @@
 #pragma once
 #include "../Core/stdafx.h"
+#include "../Resources/DescriptorVector.h"
 
 namespace FrameDX12
 {
@@ -102,6 +103,12 @@ namespace FrameDX12
 
 		// Waits for the queue to finish
 		void WaitForQueue(QueueType queue);
+
+		// Returns a reference to the descriptor vector
+		DescriptorVector& GetDescriptorVector(D3D12_DESCRIPTOR_HEAP_TYPE type)
+		{
+			return mDescriptorVectors[type];
+		}
 	private:
 		int QueueTypeToIndex(QueueType type) const
 		{
@@ -131,5 +138,7 @@ namespace FrameDX12
 
 		ComPtr<IDXGISwapChain> mSwapChain;
 		int mSwapChainVersion;
+
+		DescriptorVector mDescriptorVectors[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
 	};
 }

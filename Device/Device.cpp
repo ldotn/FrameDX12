@@ -156,6 +156,15 @@ Device::Device(Window* window_ptr, int adapter_index)
 		mSwapChain = new_swapchain;
 		mDeviceVersion = 1;
 	}
+
+	// Create descriptor vectors
+	for (int type = 0; type < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++type)
+	{
+		bool is_shader_visible = (type == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV 
+			|| type == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+		mDescriptorVectors[type].Initialize(this, (D3D12_DESCRIPTOR_HEAP_TYPE)type, is_shader_visible);
+	}
+		
 }
 
 void Device::SignalQueueWork(QueueType queue)

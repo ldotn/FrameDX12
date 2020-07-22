@@ -29,7 +29,8 @@
     <ClInclude Include="Device\CommandListPool.h" />
     <ClInclude Include="Device\Device.h" />
     <ClInclude Include="Resources\BufferedResource.h" />
-    <ClInclude Include="Resources\Texture.h" />
+    <ClInclude Include="Resources\DescriptorVector.h" />
+    <ClInclude Include="Resources\RenderTarget.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Log.cpp" />
@@ -38,7 +39,8 @@
     <ClCompile Include="Device\CommandGraph.cpp" />
     <ClCompile Include="Device\CommandListPool.cpp" />
     <ClCompile Include="Device\Device.cpp" />
-    <ClCompile Include="Resources\Texture.cpp" />
+    <ClCompile Include="Resources\DescriptorVector.cpp" />
+    <ClCompile Include="Resources\RenderTarget.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

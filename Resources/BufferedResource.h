@@ -43,7 +43,7 @@ namespace FrameDX12
 		{
 			return mResource[sCurrentResourceBufferIndex % kResourceBufferCount];
 		}
-	private:
+	protected:
 		Type mResource[kResourceBufferCount];
 	};
 }

@@ -213,14 +213,14 @@ void CommandGraph::Execute(Device* device, ID3D12PipelineState* initial_state)
 	}
 
 	for (size_t i = 0;i < mCommandLists.size();++i)
-	{
 		mCommandAllocators[i]->Reset();
-		// TODO : See what to do with initial states
-		mCommandLists[i]->Reset((*mCommandAllocators[i]).Get(), initial_state);
-	}
 
 	while (mWorkQueueSize > 0)
 	{
+		// TODO : See what to do with initial states
+		for (size_t i = 0; i < mCommandLists.size(); ++i)
+			mCommandLists[i]->Reset((*mCommandAllocators[i]).Get(), initial_state);
+
 		mCurrentItemIndex = 0;
 
 		for (HANDLE event : mStartWorkEvents) SetEvent(event);

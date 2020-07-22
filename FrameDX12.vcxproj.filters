@@ -43,7 +43,10 @@
     <ClInclude Include="Resources\BufferedResource.h">
       <Filter>Resources</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\Texture.h">
+    <ClInclude Include="Resources\DescriptorVector.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\RenderTarget.h">
       <Filter>Resources</Filter>
     </ClInclude>
   </ItemGroup>
@@ -66,6 +69,9 @@
     <ClCompile Include="Core\StaticDefinitions.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Resources\Texture.cpp" />
+    <ClCompile Include="Resources\DescriptorVector.cpp">
+      <Filter>Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="Resources\RenderTarget.cpp" />
   </ItemGroup>
 </Project>
