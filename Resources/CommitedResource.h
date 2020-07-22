@@ -16,21 +16,17 @@ namespace FrameDX12
 					D3D12_HEAP_TYPE heap_type = D3D12_HEAP_TYPE_DEFAULT,
 					D3D12_HEAP_FLAGS heap_flags = D3D12_HEAP_FLAG_NONE); 
 
-		void CreateDSV(Device* device);
+		void CreateDSV();
+		void CreateCBV();
 
-		// The callback is used to override default settings
-		// Note that for buffers you NEED to fill Buffer.NumElements as it can't know the element size
-		void CreateSRV(Device* device, std::function<void(D3D12_SHADER_RESOURCE_VIEW_DESC*)> callback = {});
-		
-		void CreateCBV(Device* device);
-
-		// The callback is used to override default settings
-		// Note that for buffers you NEED to fill Buffer.NumElements and Buffer.StructureByteStride as it can't know the element size
-		void CreateUAV(Device* device, std::function<void(D3D12_SHADER_RESOURCE_VIEW_DESC*)> callback = {}, ComPtr<ID3D12Resource> counter = nullptr);
+		// Note : 1) It's ok to pass an rvalue pointer as desc, 2) some resources REQUIRE a desc to be provided
+		void CreateSRV(D3D12_SHADER_RESOURCE_VIEW_DESC* desc = nullptr);
+		// Note : 1) It's ok to pass an rvalue pointer as desc, 2) some resources REQUIRE a desc to be provided
+		void CreateUAV(D3D12_UNORDERED_ACCESS_VIEW_DESC * desc, ComPtr<ID3D12Resource> counter = nullptr);
 
 		// Fills the resource from a provided CPU buffer
 		// Note that this only adds the command to the list, you need to sync before using the resource
-		void FillFromBuffer(Device* device, ID3D12GraphicsCommandList* cl, D3D12_SUBRESOURCE_DATA data, D3D12_RESOURCE_STATES new_states);
+		void FillFromBuffer(ID3D12GraphicsCommandList* cl, D3D12_SUBRESOURCE_DATA data, D3D12_RESOURCE_STATES new_states);
 
 		void Transition(ID3D12GraphicsCommandList* cl, D3D12_RESOURCE_STATES new_states);
 
@@ -39,6 +35,8 @@ namespace FrameDX12
 		Descriptor GetCBV() const { return mCBV; }
 		Descriptor GetUAV() const { return mUAV; }
 	private:
+		Device* mDevice;
+
 		ComPtr<ID3D12Resource> mResource;
 		D3D12_RESOURCE_STATES mStates;
 		CD3DX12_RESOURCE_DESC mDescription;

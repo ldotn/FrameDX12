@@ -54,7 +54,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
         clear_value.DepthStencil.Stencil = 0;
 
         depth_buffer.Create(&dev, depth_desc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &clear_value);
-        depth_buffer.CreateDSV(&dev);
+        depth_buffer.CreateDSV();
     }
 
     // Create the command graph
