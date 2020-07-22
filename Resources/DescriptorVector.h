@@ -17,10 +17,12 @@ namespace FrameDX12
 		{
 			return CD3DX12_CPU_DESCRIPTOR_HANDLE((*mHeapPtr)->GetCPUDescriptorHandleForHeapStart(), mIndex, mEntrySize);
 		}
+
+		bool IsValid() const { return mHeapPtr != nullptr; }
 	private:
 		friend class DescriptorVector;
 
-		ID3D12DescriptorHeap** mHeapPtr;
+		ID3D12DescriptorHeap** mHeapPtr = nullptr;
 		INT mIndex;
 		UINT mEntrySize;
 	};

@@ -24,24 +24,34 @@ namespace FrameDX12
 				mResource[i] = constructor(i);
 		}
 
-		Type& operator*()
+		Type& GetResource()
 		{
 			return mResource[sCurrentResourceBufferIndex % kResourceBufferCount];
+		}
+
+		const Type& GetResource() const
+		{
+			return mResource[sCurrentResourceBufferIndex % kResourceBufferCount];
+		}
+
+		Type& operator*()
+		{
+			return GetResource();
 		}
 
 		Type& operator->()
 		{
-			return mResource[sCurrentResourceBufferIndex % kResourceBufferCount];
+			return GetResource();
 		}
 
 		const Type& operator*() const
 		{
-			return mResource[sCurrentResourceBufferIndex % kResourceBufferCount];
+			return GetResource();
 		}
 
 		const Type& operator->() const
 		{
-			return mResource[sCurrentResourceBufferIndex % kResourceBufferCount];
+			return GetResource();
 		}
 	protected:
 		Type mResource[kResourceBufferCount];
