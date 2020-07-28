@@ -52,6 +52,12 @@
     <ClInclude Include="Resources\CommitedResource.h">
       <Filter>Resources</Filter>
     </ClInclude>
+    <ClInclude Include="Resources\RootSignature.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\PipelineStateObjectPool.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Log.cpp">
@@ -81,5 +87,14 @@
     <ClCompile Include="Resources\CommitedResource.cpp">
       <Filter>Resources</Filter>
     </ClCompile>
+    <ClCompile Include="Resources\PipelineStateObjectPool.cpp">
+      <Filter>Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Error.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

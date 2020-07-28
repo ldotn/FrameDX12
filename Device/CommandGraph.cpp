@@ -61,7 +61,8 @@ CommandGraph::CommandGraph(size_t num_workers, QueueType type, Device* device_pt
 	mType(type),
 	mWorkerFinishedEvents(num_workers),
 	mStartWorkEvents(num_workers),
-	mCloseWorkers(false)
+	mCloseWorkers(false),
+	mCommandLists(num_workers)
 {
 	//mStartWorkEvent = CreateEvent(NULL,FALSE,FALSE,NULL);
 
@@ -77,7 +78,7 @@ CommandGraph::CommandGraph(size_t num_workers, QueueType type, Device* device_pt
 		});		
 
 		// Create the DX command list
-		auto& cl = mCommandLists.emplace_back();
+		auto& cl = mCommandLists[worker_id];
 		LogCheck(device_ptr->GetDevice()->CreateCommandList(
 			0,
 			(D3D12_COMMAND_LIST_TYPE)type,
@@ -226,6 +227,11 @@ void CommandGraph::Execute(Device* device, ID3D12PipelineState* initial_state)
 		for (HANDLE event : mStartWorkEvents) SetEvent(event);
 		
 		WaitForMultipleObjects(mWorkerFinishedEvents.size(), mWorkerFinishedEvents.data(), true, INFINITE);
+
+		// Need to call execute between levels, otherwise you won't get the correct dependencies
+		// Suppose node C depends on A and B
+		// You add A to cl0, B to cl1, then C to cl0
+		// If you try to execute cl0 and cl1 at the same time, you aren't respecting dependencies
 		queue->ExecuteCommandLists(mCommandLists.size(), mRawCommandLists);
 
 		mWorkQueueSize = 0;
@@ -238,15 +244,8 @@ void CommandGraph::Execute(Device* device, ID3D12PipelineState* initial_state)
 		mNextWorkQueue.resize(0);
 	}
 
-	// Signal the fenche and advance the buffered resources
+	// Signal the fence
 	device->SignalQueueWork(mType);
-	sCurrentResourceBufferIndex++;
-
-	// If we are going to roll back to the first allocator, then we need to wait
-	if (sCurrentResourceBufferIndex % kResourceBufferCount == 0)
-	{
-		device->WaitForQueue(mType);
-	}
 }
 
 CommandGraph::~CommandGraph()

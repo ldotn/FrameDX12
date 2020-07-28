@@ -120,7 +120,8 @@ Setup --> RenderObjects ----> PostPro --> Present
 		// The problem with adding the nodes to the work queue as soon as their dependencies finish is that you need to force stop all threads, do and execute, reset the CLs and continue writing
 		// For now let's keep it "simple" and do it like this
 		//
-		//		IMPORTANT NOTE : This doesn't wait for the GPU to finish unless it ran out of buffered allocators
+		//		IMPORTANT NOTE : This doesn't wait for the GPU to finish nor advances the buffer index 
+		//							Allocators are buffered but you do need to wait if you are using the same allocator again
 		//
 		void Execute(Device * device, ID3D12PipelineState* initial_state = nullptr);
 	private:

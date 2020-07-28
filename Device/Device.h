@@ -1,6 +1,7 @@
 #pragma once
 #include "../Core/stdafx.h"
 #include "../Resources/DescriptorVector.h"
+#include "../Resources/PipelineStateObjectPool.h"
 
 namespace FrameDX12
 {
@@ -109,6 +110,8 @@ namespace FrameDX12
 		{
 			return mDescriptorVectors[type];
 		}
+
+		ID3D12PipelineState* GetPSO(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc) { return mPSOPool.GetPSO(desc); }
 	private:
 		int QueueTypeToIndex(QueueType type) const
 		{
@@ -140,5 +143,7 @@ namespace FrameDX12
 		int mSwapChainVersion;
 
 		DescriptorVector mDescriptorVectors[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
+
+		PipelineStateObjectPool mPSOPool;
 	};
 }
