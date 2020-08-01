@@ -100,6 +100,9 @@ CommandGraph::CommandGraph(size_t num_workers, QueueType type, Device* device_pt
 				if (mCloseWorkers)
 					break;
 
+				// Used to fire pix events on node changes
+				Node* current_node = nullptr;
+
 				while (true)
 				{
 					int item_index = mCurrentItemIndex;
@@ -115,18 +118,31 @@ CommandGraph::CommandGraph(size_t num_workers, QueueType type, Device* device_pt
 						item_index = mCurrentItemIndex.fetch_add(1); // Advance so the next thread works in the next item
 
 					Node* node = mWorkQueue[item_index].node_ptr;
+					
+					// Pix marking
+					if (node != current_node)
+					{
+						if (current_node) PIXEndEvent(mCommandLists[worker_id].Get());
+
+						current_node = node;
+						PIXBeginEvent(mCommandLists[worker_id].Get(), 0, current_node->name.c_str());
+					}
+
 					node->body(mCommandLists[worker_id].Get(), worker_id);
+
 					if (work_index == 0)
 					{
 						for (Node* dependent_node : node->dependent_nodes)
 						{
 							int ready_dependencies = dependent_node->num_ready_dependencies.fetch_add(1) + 1;
-							if (ready_dependencies == dependent_node->dependencies.size())
+							if (ready_dependencies == dependent_node->num_dependencies)
 							{
 								std::scoped_lock(mLock);
 								mNextWorkQueue.push_back(dependent_node);
 							}
 						}
+
+						if (current_node) PIXEndEvent(mCommandLists[worker_id].Get());
 					}
 				}
 
@@ -163,6 +179,8 @@ void CommandGraph::Build(Device* device)
 
 		mNodes[node_idx].body = tmp_node.body;
 		mNodes[node_idx].repeats = tmp_node.repeats;
+		mNodes[node_idx].name = name;
+		mNodes[node_idx].num_dependencies = tmp_node.dependencies.size();
 
 		++node_idx;
 	}
@@ -184,7 +202,6 @@ void CommandGraph::Build(Device* device)
 				{
 					Node* dependency_ptr = &mNodes[name_index->second];
 
-					node_ptr->dependencies.push_back(dependency_ptr);
 					dependency_ptr->dependent_nodes.push_back(node_ptr);
 				}
 			}

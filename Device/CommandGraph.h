@@ -1,7 +1,7 @@
 #pragma once
 #include "../Core/stdafx.h"
 #include "Device.h"
-#include "../Resources/BufferedResource.h"
+#include "../Resource/BufferedResource.h"
 
 namespace FrameDX12
 {
@@ -75,46 +75,14 @@ Setup --> RenderObjects ----> PostPro --> Present
 		~CommandGraph();
 		
 		// TODO : Take into account the estimated number of commands on the lists for CL reuse
-		//			The way the CLs are filled might not make it neccessary though
+		//			The way the CLs are filled might not make it necessary though
 		void AddNode(std::string name, std::function<void(ID3D12GraphicsCommandList*, uint32_t)> node_body, std::vector<std::string> dependencies, uint32_t repeats = 1);
 		
-		// Does the following
-		// - Fill mNodes and mStartingNodes
-		// - Update the nodes filling dependent_nodes with the pointers to nodes that depend on the node
-		// - Update the nodes filling dependencies
-		// - Clear mNameMap
+		// Constructs all the internal structures needed to execute
+		// Can only be called once
 		void Build(Device* device);
 
-		// Does the following
-		//  Reset mNumReadyDependencies to 0 on all nodes
-		//  Reset all command lists and allocators (remember allocators are buffered so you only reset the current ones)
-		//  Initialize the work queue with mStartingNodes (current index = mRepeats - 1 for each work item)
-		//  next_work_queue = {}
-		//  while work_queue.size > 0
-		//		Signal mStartWorkEvent so all worker threads start executing
-		//	[Worker thread]
-		//		while !bExit
-		//			Wait on mStartWorkEvent
-		//			while current_item_index < work_queue.size
-		//				item_index = current_item_index
-		//				work_index = work_queue[item_index].current_work_index.fetch_sub(1);
-		//				if work_index < 0 
-		//					continue // Someone got a 0, so keep looping until that thread sets everything up
-		//				else if work_index == 0
-		//					item_index = current_item_index.fetch_add(1) // Advance so the next thread works in the next item
-		//				
-		//				node = work_queue[item_index].node
-		//				Call mBody with the worker CL and c index
-		//				if work_index == 0
-		//					for dependent_node in node->mDependentNodes
-		//						ready_dependencies = dependent_node->mNumReadyDependencies.fetch_add(1) + 1 
-		//						if ready_dependencies == dependent_node->mDependencies.size
-		//							Add work item for dependent_node to next_work_queue
-		//   [Main thread]
-		//		Wait for all threads to finish execution
-		//		call ExecuteCommandLists
-		//		work_queue = next_work_queue
-		//		next_work_queue = {}
+		// Executes the graph diving the work over multiple threads
 		// ------------------------------------------------------------------------------------------------------------------
 		// If the nodes have very different workloads this is not the most efficient as you are waiting for an entire graph level to finish before moving to the next
 		// The problem with adding the nodes to the work queue as soon as their dependencies finish is that you need to force stop all threads, do and execute, reset the CLs and continue writing
@@ -134,9 +102,10 @@ Setup --> RenderObjects ----> PostPro --> Present
 
 		struct Node
 		{
+			std::string name; // used for the pix events
 			uint32_t repeats;
 			std::function<void(ID3D12GraphicsCommandList*, uint32_t)> body;
-			std::vector<Node*> dependencies; // Think the vector is not needed, the count should be enough...
+			int num_dependencies;
 			std::vector<Node*> dependent_nodes;
 			std::atomic<int> num_ready_dependencies;
 		};

@@ -8,7 +8,7 @@
     <Filter Include="Device">
       <UniqueIdentifier>{9400bd6c-45ae-4449-994a-1e6528a4556c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resources">
+    <Filter Include="Resource">
       <UniqueIdentifier>{96201013-06d1-47f4-a675-ca338676d436}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -40,23 +40,26 @@
     <ClInclude Include="Device\CommandGraph.h">
       <Filter>Device</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\BufferedResource.h">
-      <Filter>Resources</Filter>
+    <ClInclude Include="Resource\BufferedResource.h">
+      <Filter>Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\DescriptorVector.h">
-      <Filter>Resources</Filter>
+    <ClInclude Include="Resource\CommitedResource.h">
+      <Filter>Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\RenderTarget.h">
-      <Filter>Resources</Filter>
+    <ClInclude Include="Resource\DescriptorVector.h">
+      <Filter>Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\CommitedResource.h">
-      <Filter>Resources</Filter>
+    <ClInclude Include="Resource\PipelineStateObjectPool.h">
+      <Filter>Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\RootSignature.h">
-      <Filter>Resources</Filter>
+    <ClInclude Include="Resource\RenderTarget.h">
+      <Filter>Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Resources\PipelineStateObjectPool.h">
-      <Filter>Resources</Filter>
+    <ClInclude Include="Resource\RootSignature.h">
+      <Filter>Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource\Mesh.h">
+      <Filter>Resource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -78,20 +81,23 @@
     <ClCompile Include="Core\StaticDefinitions.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Resources\DescriptorVector.cpp">
-      <Filter>Resources</Filter>
-    </ClCompile>
-    <ClCompile Include="Resources\RenderTarget.cpp">
-      <Filter>Resources</Filter>
-    </ClCompile>
-    <ClCompile Include="Resources\CommitedResource.cpp">
-      <Filter>Resources</Filter>
-    </ClCompile>
-    <ClCompile Include="Resources\PipelineStateObjectPool.cpp">
-      <Filter>Resources</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Error.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Resource\CommitedResource.cpp">
+      <Filter>Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Resource\DescriptorVector.cpp">
+      <Filter>Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Resource\PipelineStateObjectPool.cpp">
+      <Filter>Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Resource\RenderTarget.cpp">
+      <Filter>Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Resource\Mesh.cpp">
+      <Filter>Resource</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

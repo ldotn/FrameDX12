@@ -28,12 +28,13 @@
     <ClInclude Include="Device\CommandGraph.h" />
     <ClInclude Include="Device\CommandListPool.h" />
     <ClInclude Include="Device\Device.h" />
-    <ClInclude Include="Resources\BufferedResource.h" />
-    <ClInclude Include="Resources\CommitedResource.h" />
-    <ClInclude Include="Resources\DescriptorVector.h" />
-    <ClInclude Include="Resources\PipelineStateObjectPool.h" />
-    <ClInclude Include="Resources\RenderTarget.h" />
-    <ClInclude Include="Resources\RootSignature.h" />
+    <ClInclude Include="Resource\BufferedResource.h" />
+    <ClInclude Include="Resource\CommitedResource.h" />
+    <ClInclude Include="Resource\DescriptorVector.h" />
+    <ClInclude Include="Resource\PipelineStateObjectPool.h" />
+    <ClInclude Include="Resource\RenderTarget.h" />
+    <ClInclude Include="Resource\RootSignature.h" />
+    <ClInclude Include="Resource\Mesh.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Error.cpp" />
@@ -43,10 +44,11 @@
     <ClCompile Include="Device\CommandGraph.cpp" />
     <ClCompile Include="Device\CommandListPool.cpp" />
     <ClCompile Include="Device\Device.cpp" />
-    <ClCompile Include="Resources\CommitedResource.cpp" />
-    <ClCompile Include="Resources\DescriptorVector.cpp" />
-    <ClCompile Include="Resources\PipelineStateObjectPool.cpp" />
-    <ClCompile Include="Resources\RenderTarget.cpp" />
+    <ClCompile Include="Resource\CommitedResource.cpp" />
+    <ClCompile Include="Resource\DescriptorVector.cpp" />
+    <ClCompile Include="Resource\Mesh.cpp" />
+    <ClCompile Include="Resource\PipelineStateObjectPool.cpp" />
+    <ClCompile Include="Resource\RenderTarget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

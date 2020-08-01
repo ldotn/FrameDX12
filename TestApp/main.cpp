@@ -6,8 +6,8 @@
 #include "../Core/Window.h"
 #include "../Device/Device.h"
 #include "../Device/CommandGraph.h"
-#include "../Resources/RenderTarget.h"
-#include "../Resources/CommitedResource.h"
+#include "../Resource/RenderTarget.h"
+#include "../Resource/CommitedResource.h"
 #include <iostream>
 #include "pix3.h"
 
@@ -113,9 +113,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     CommandGraph copy_graph(kWorkerCount, QueueType::Copy, &dev);
     copy_graph.AddNode("Mesh0", [&](ID3D12GraphicsCommandList* cl, uint32_t)
     {
-        // TODO : Store the node name and move this to the command graph
-        PIXScopedEvent(cl, 0, L"Mesh0");
-
         // Need to set it to common when using the copy queue
         // TODO : It would be nice if the command graph could batch resource barriers
         vertex_buffer.FillFromBuffer(cl, vertices, D3D12_RESOURCE_STATE_COMMON);
@@ -189,8 +186,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
     commands.AddNode("DrawSetup", [&](ID3D12GraphicsCommandList* cl, uint32_t)
     {
-        PIXScopedEvent(cl, 0, L"DrawSetup");
-
         // TODO : Theres no need to do this each frame, it can be done just once
         vertex_buffer.Transition(cl, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
         index_buffer.Transition(cl, D3D12_RESOURCE_STATE_INDEX_BUFFER);
@@ -198,8 +193,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
     commands.AddNode("Clear", [&](ID3D12GraphicsCommandList* cl, uint32_t)
     {
-        PIXScopedEvent(cl, 0, L"Clear");
-
         backbuffer.Transition(cl, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
         cl->ClearRenderTargetView(*backbuffer.GetHandle(), DirectX::Colors::Magenta, 0, nullptr);
@@ -218,8 +211,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
     commands.AddNode("Draw", [&](ID3D12GraphicsCommandList* cl, uint32_t)
     {
-        PIXScopedEvent(cl, 0, L"Draw");
-
         // While this state is shared, and could be set earlier, doing execute command lists seems to clear it
         // TODO : Move this to a init stage on the node execution, to prevent having this fire on each repeat
         cl->RSSetViewports(1, &viewport);
@@ -235,8 +226,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
     commands.AddNode("Present", [&](ID3D12GraphicsCommandList* cl, uint32_t)
     {
-        PIXScopedEvent(cl, 0, L"Present");
-
         backbuffer.Transition(cl, D3D12_RESOURCE_STATE_PRESENT);
     }, {"Draw"});
 

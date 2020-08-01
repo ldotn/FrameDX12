@@ -28,6 +28,7 @@
 #include "enumerate.h"
 #include "zip.h"
 #include <mutex>
+#include "pix3.h"
 
 template<typename T>
 using ComPtr = Microsoft::WRL::ComPtr<T>;

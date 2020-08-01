@@ -1,7 +1,7 @@
 #include "Device.h"
 #include "../Core/Log.h"
 #include <iostream>
-#include "../Resources/BufferedResource.h"
+#include "../Resource/BufferedResource.h"
 #include "../Core/Window.h"
 
 using namespace FrameDX12;

@@ -29,13 +29,13 @@ namespace FrameDX12
 		// Fills the resource from a provided CPU buffer
 		// Note that this only adds the command to the list, you need to sync before using the resource
 		template<typename T>
-		void FillFromBuffer(ID3D12GraphicsCommandList* cl, const std::vector<T>& buffer, D3D12_RESOURCE_STATES new_states)
+		void FillFromBuffer(ID3D12GraphicsCommandList* cl, T* buffer, size_t buffer_size, D3D12_RESOURCE_STATES new_states)
 		{
 			Transition(cl, D3D12_RESOURCE_STATE_COPY_DEST);
 
 			D3D12_SUBRESOURCE_DATA data_desc = {};
-			data_desc.pData = buffer.data();
-			data_desc.RowPitch = buffer.size() * sizeof(T);
+			data_desc.pData = buffer;
+			data_desc.RowPitch = buffer_size * sizeof(T);
 			data_desc.SlicePitch = data_desc.RowPitch;
 
 			// Try to find a temp resource big enough or create it if it doesn't exist
@@ -68,6 +68,12 @@ namespace FrameDX12
 			UpdateSubresources<1>(cl, mResource.Get(), upload_resource.Get(), 0, 0, 1, &data_desc);
 
 			Transition(cl, new_states);
+		}
+
+		template<typename T>
+		void FillFromBuffer(ID3D12GraphicsCommandList* cl, const std::vector<T>& buffer, D3D12_RESOURCE_STATES new_states)
+		{
+			FillFromBuffer(cl, buffer.data(), buffer.size(), new_states);
 		}
 
 		void Transition(ID3D12GraphicsCommandList* cl, D3D12_RESOURCE_STATES new_states);

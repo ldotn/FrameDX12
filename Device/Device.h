@@ -1,7 +1,7 @@
 #pragma once
 #include "../Core/stdafx.h"
-#include "../Resources/DescriptorVector.h"
-#include "../Resources/PipelineStateObjectPool.h"
+#include "../Resource/DescriptorVector.h"
+#include "../Resource/PipelineStateObjectPool.h"
 
 namespace FrameDX12
 {
