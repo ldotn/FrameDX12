@@ -8,6 +8,7 @@
 #include "../Device/CommandGraph.h"
 #include "../Resource/RenderTarget.h"
 #include "../Resource/CommitedResource.h"
+#include "../Resource/Mesh.h"
 #include <iostream>
 #include "pix3.h"
 
@@ -15,7 +16,7 @@ using namespace FrameDX12;
 using namespace std;
 using namespace fpp;
 
-constexpr int kWorkerCount = 2;
+constexpr int kWorkerCount = 4;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, int showCmd)
 {
@@ -88,49 +89,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
         ThrowIfFailed(dev.GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&root_signature)));
     }
 
-    // Create geometry
-    struct Vertex
-    {
-        DirectX::XMFLOAT3 position;
-    };
-    const D3D12_INPUT_ELEMENT_DESC vertex_desc[] =
-    {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-    };
-
-    vector<Vertex> vertices =
-    {
-        {DirectX::XMFLOAT3(-0.8,0.9,0)},
-        {DirectX::XMFLOAT3(0,-0.8,0)},
-        {DirectX::XMFLOAT3(0.8,0,0.5)}
-    };
-    vector<uint16_t> indices = { 2, 1, 0 };
-
-    CommitedResource index_buffer, vertex_buffer;
-    index_buffer.Create(&dev, CD3DX12_RESOURCE_DESC::Buffer(indices.size() * sizeof(uint16_t)));
-    vertex_buffer.Create(&dev, CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(Vertex)));
-
-    CommandGraph copy_graph(kWorkerCount, QueueType::Copy, &dev);
-    copy_graph.AddNode("Mesh0", [&](ID3D12GraphicsCommandList* cl, uint32_t)
-    {
-        // Need to set it to common when using the copy queue
-        // TODO : It would be nice if the command graph could batch resource barriers
-        vertex_buffer.FillFromBuffer(cl, vertices, D3D12_RESOURCE_STATE_COMMON);
-        index_buffer.FillFromBuffer(cl, indices, D3D12_RESOURCE_STATE_COMMON);
-    }, {});
-    copy_graph.Build(&dev);
-    copy_graph.Execute(&dev);
-
-    D3D12_VERTEX_BUFFER_VIEW vertex_buffer_view;
-    vertex_buffer_view.BufferLocation = vertex_buffer->GetGPUVirtualAddress();
-    vertex_buffer_view.SizeInBytes = vertices.size() * sizeof(Vertex);
-    vertex_buffer_view.StrideInBytes = sizeof(Vertex);
-
-    D3D12_INDEX_BUFFER_VIEW index_buffer_view;
-    index_buffer_view.BufferLocation = index_buffer->GetGPUVirtualAddress();
-    index_buffer_view.SizeInBytes = indices.size() * sizeof(uint16_t);
-    index_buffer_view.Format = DXGI_FORMAT_R16_UINT;
-
     // Load shaders
     ComPtr<ID3DBlob> vertex_shader;
     ComPtr<ID3DBlob> pixel_shader;
@@ -142,25 +100,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     UINT compileFlags = D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
 
+    // TODO : Handle failure
     ComPtr<ID3DBlob> error_blob;
     LogCheck(D3DCompileFromFile(L"SimpleShaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertex_shader, &error_blob), LogCategory::Error);
-    if (error_blob)
-    {
-        PrintErrorBlob(error_blob);
-        error_blob->Release();
-    }
+    LogErrorBlob(error_blob);
 
     LogCheck(D3DCompileFromFile(L"SimpleShaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixel_shader, &error_blob), LogCategory::Error);
-    if (error_blob)
-    {
-        PrintErrorBlob(error_blob);
-        error_blob->Release();
-    }
+    LogErrorBlob(error_blob);
 
     // Define pipeline state 
     D3D12_INPUT_LAYOUT_DESC input_layout;
-    input_layout.pInputElementDescs = vertex_desc;
-    input_layout.NumElements = _countof(vertex_desc);
+    input_layout.pInputElementDescs = StandardVertex::sDesc;
+    input_layout.NumElements = _countof(StandardVertex::sDesc);
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeline_state = {};
     pipeline_state.InputLayout = input_layout;
@@ -177,6 +128,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     pipeline_state.DSVFormat = DXGI_FORMAT_D32_FLOAT;
     pipeline_state.SampleDesc.Count = 1;
 
+    // Load mesh
+    CommandGraph copy_graph(kWorkerCount, QueueType::Copy, &dev);
+    
+    Mesh monkey;
+    monkey.BuildFromOBJ(&dev, copy_graph, "monkey.obj");
+    vector<Mesh> monkeys(100);
+    for (auto& m : monkeys) m = monkey;
+
+    copy_graph.Build(&dev);
+    copy_graph.Execute(&dev);
+
     // -------------------------------
     //      Render setup
     // -------------------------------
@@ -184,14 +146,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     // Create the command graph
     CommandGraph commands(kWorkerCount, QueueType::Graphics, &dev);
 
-    commands.AddNode("DrawSetup", [&](ID3D12GraphicsCommandList* cl, uint32_t)
-    {
-        // TODO : Theres no need to do this each frame, it can be done just once
-        vertex_buffer.Transition(cl, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-        index_buffer.Transition(cl, D3D12_RESOURCE_STATE_INDEX_BUFFER);
-    }, {});
-
-    commands.AddNode("Clear", [&](ID3D12GraphicsCommandList* cl, uint32_t)
+    commands.AddNode("Clear", nullptr, [&](ID3D12GraphicsCommandList* cl, uint32_t)
     {
         backbuffer.Transition(cl, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
@@ -209,22 +164,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     scissor_rect.right = static_cast<LONG>(viewport.Width);
     scissor_rect.bottom = static_cast<LONG>(viewport.Height);
 
-    commands.AddNode("Draw", [&](ID3D12GraphicsCommandList* cl, uint32_t)
+    commands.AddNode("Draw", [&](ID3D12GraphicsCommandList* cl)
     {
         // While this state is shared, and could be set earlier, doing execute command lists seems to clear it
-        // TODO : Move this to a init stage on the node execution, to prevent having this fire on each repeat
         cl->RSSetViewports(1, &viewport);
         cl->RSSetScissorRects(1, &scissor_rect);
         cl->SetGraphicsRootSignature(root_signature.Get());
         cl->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        cl->OMSetRenderTargets(1, &*backbuffer.GetHandle(), false, &*depth_buffer.GetDSV());
+        cl->OMSetRenderTargets(1, &*backbuffer.GetHandle(), false, &*depth_buffer.GetDSV()); 
+    },
+    [&](ID3D12GraphicsCommandList* cl, uint32_t idx)
+    {
+        monkeys[idx].Draw(cl);
+    }, {"Clear"}, monkeys.size());
 
-        cl->IASetIndexBuffer(&index_buffer_view);
-        cl->IASetVertexBuffers(0, 1, &vertex_buffer_view);
-        cl->DrawIndexedInstanced(indices.size(), 1, 0, 0, 0);
-    }, {"Clear", "DrawSetup"});
-
-    commands.AddNode("Present", [&](ID3D12GraphicsCommandList* cl, uint32_t)
+    commands.AddNode("Present", nullptr, [&](ID3D12GraphicsCommandList* cl, uint32_t)
     {
         backbuffer.Transition(cl, D3D12_RESOURCE_STATE_PRESENT);
     }, {"Draw"});
@@ -237,10 +191,30 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     // Make sure all transfers finished
     dev.WaitForQueue(QueueType::Copy);
 
+    // To print some debug metrics
+    float execute_cl_time, frame_time;
+    thread metrics_printer([&]()
+    {
+        FrameDX12::TimedLoop([&]()
+        {
+            system("cls");
+            wcout << L"---- Metrics ----" << endl;
+            wcout << L"Execute CL : " << to_wstring(execute_cl_time) << endl;
+            wcout << L"Frame      : " << to_wstring(frame_time) << endl;
+        }, 150ms);
+    });
+    metrics_printer.detach();
+
     // Enter the render loop
     window.CallDuringIdle([&](double elapsed_time)
     {
-        commands.Execute(&dev, dev.GetPSO(pipeline_state));
+        frame_time = elapsed_time;
+
+        auto start = chrono::high_resolution_clock::now();
+            commands.Execute(&dev, dev.GetPSO(pipeline_state));
+        auto end = chrono::high_resolution_clock::now();
+        execute_cl_time = chrono::duration_cast<chrono::nanoseconds>((end - start)).count() / 1e6;
+
         dev.GetSwapChain()->Present(0, 0);
 
         // Advance buffer index

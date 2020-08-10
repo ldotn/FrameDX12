@@ -107,4 +107,18 @@ namespace FrameDX12
 		std::vector<T>& mVec;
 		size_t mIndex;
 	};
+
+	inline std::wstring StringToWString(const std::string& input)
+	{
+		// Find size first
+		int size = MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, input.c_str(), input.size() + 1, nullptr, 0);
+
+		// Do conversion and return
+		std::wstring output;
+		output.reserve(size);
+
+		MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, input.c_str(), input.size() + 1, output.data(), size);
+
+		return output;
+	}
 }

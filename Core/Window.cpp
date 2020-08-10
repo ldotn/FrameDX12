@@ -32,7 +32,7 @@ void FrameDX12::Window::CallDuringIdle(std::function<bool(double)> LoopBody)
 			// Measure time between now and the last call
 			auto time = chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - mLastLoopTime);
 			mLastLoopTime = chrono::high_resolution_clock::now();
-			if (LoopBody(time.count()))
+			if (LoopBody(time.count() / 1e6))
 				return;
 		}
 	}

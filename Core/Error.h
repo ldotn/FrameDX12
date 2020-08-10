@@ -116,9 +116,8 @@ namespace FrameDX12
 
 #define LAST_ERROR (StatusCode)HRESULT_FROM_WIN32(GetLastError())
 
-	// Outputs the string on the provided blob to the screen
-	// Assumes the blob is valid
-	void PrintErrorBlob(ComPtr<ID3DBlob> blob);
+	// Logs the message of the blob and releases it. Returns true if the blob was valid
+	bool LogErrorBlob(ComPtr<ID3DBlob> blob);
 }
 	
 

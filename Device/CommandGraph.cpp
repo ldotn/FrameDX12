@@ -100,9 +100,7 @@ CommandGraph::CommandGraph(size_t num_workers, QueueType type, Device* device_pt
 				if (mCloseWorkers)
 					break;
 
-				// Used to fire pix events on node changes
 				Node* current_node = nullptr;
-
 				while (true)
 				{
 					int item_index = mCurrentItemIndex;
@@ -119,16 +117,16 @@ CommandGraph::CommandGraph(size_t num_workers, QueueType type, Device* device_pt
 
 					Node* node = mWorkQueue[item_index].node_ptr;
 					
-					// Pix marking
 					if (node != current_node)
 					{
 						if (current_node) PIXEndEvent(mCommandLists[worker_id].Get());
 
 						current_node = node;
 						PIXBeginEvent(mCommandLists[worker_id].Get(), 0, current_node->name.c_str());
+						if(node->init) node->init(mCommandLists[worker_id].Get());
 					}
 
-					node->body(mCommandLists[worker_id].Get(), worker_id);
+					node->body(mCommandLists[worker_id].Get(), work_index);
 
 					if (work_index == 0)
 					{
@@ -153,13 +151,21 @@ CommandGraph::CommandGraph(size_t num_workers, QueueType type, Device* device_pt
 	}
 }
 
-void CommandGraph::AddNode(std::string name, std::function<void(ID3D12GraphicsCommandList*, uint32_t)> node_body, std::vector<std::string> dependencies, uint32_t repeats)
+void CommandGraph::AddNode(std::string name, std::function<void(ID3D12GraphicsCommandList*)> init_body, std::function<void(ID3D12GraphicsCommandList*, uint32_t)> node_body, std::vector<std::string> dependencies, uint32_t repeats)
 {
+	if (name.empty())
+	{
+		name = "___unnamed_node_" + std::to_string(mNamedNodes.size());
+	}
+
 	ConstructionNode node;
+	node.init = init_body;
 	node.body = node_body;
 	node.repeats = repeats;
 	node.dependencies = dependencies;
 	
+	LogAssert(mNamedNodes.find(name) == mNamedNodes.end(), LogCategory::Error);
+
 	mNamedNodes[name] = node;
 }
 
@@ -178,6 +184,7 @@ void CommandGraph::Build(Device* device)
 		name_index_map[name] = node_idx;
 
 		mNodes[node_idx].body = tmp_node.body;
+		mNodes[node_idx].init = tmp_node.init;
 		mNodes[node_idx].repeats = tmp_node.repeats;
 		mNodes[node_idx].name = name;
 		mNodes[node_idx].num_dependencies = tmp_node.dependencies.size();
@@ -256,7 +263,7 @@ void CommandGraph::Execute(Device* device, ID3D12PipelineState* initial_state)
 		{
 			WorkItem& item = mWorkQueue[mWorkQueueSize++];
 			item.node_ptr = node;
-			item.current_work_index = 0;
+			item.current_work_index = node->repeats - 1;
 		}
 		mNextWorkQueue.resize(0);
 	}
