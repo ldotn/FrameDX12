@@ -1,5 +1,5 @@
 #pragma once
-#include "DescriptorVector.h"
+#include "DescriptorPool.h"
 #include "../Device/Device.h"
 #include "../Core/Log.h"
 
@@ -85,7 +85,7 @@ namespace FrameDX12
 
 		const CD3DX12_RESOURCE_DESC& GetDesc() const { return mDescription; }
 		ID3D12Resource* operator->() { return mResource.Get(); }
-	private:
+	protected:
 		static thread_local std::vector<ComPtr<ID3D12Resource>> mTempUploadResources;
 
 		Device* mDevice;

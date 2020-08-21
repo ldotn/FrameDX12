@@ -160,13 +160,21 @@ Device::Device(Window* window_ptr, int adapter_index)
 	}
 
 	// Create descriptor vectors
-	for (int type = 0; type < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++type)
 	{
-		bool is_shader_visible = (type == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV 
-			|| type == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-		mDescriptorVectors[type].Initialize(this, (D3D12_DESCRIPTOR_HEAP_TYPE)type, is_shader_visible);
+		D3D12_DESCRIPTOR_HEAP_TYPE type;
+
+		type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+		mDescriptorPools[type].Initialize(this, type, true, 256);
+
+		type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		mDescriptorPools[type].Initialize(this, type, false, 512);
+
+		type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+		mDescriptorPools[type].Initialize(this, type, false, 256);
+
+		type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		mDescriptorPools[type].Initialize(this, type, true, 65536);
 	}
-		
 }
 
 void Device::SignalQueueWork(QueueType queue)

@@ -9,12 +9,14 @@
 #include "../Resource/RenderTarget.h"
 #include "../Resource/CommitedResource.h"
 #include "../Resource/Mesh.h"
+#include "../Resource/ConstantBuffer.h"
 #include <iostream>
 #include "pix3.h"
 
 using namespace FrameDX12;
 using namespace std;
 using namespace fpp;
+using namespace DirectX;
 
 constexpr int kWorkerCount = 4;
 
@@ -119,6 +121,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     pipeline_state.VS = { reinterpret_cast<UINT8*>(vertex_shader->GetBufferPointer()), vertex_shader->GetBufferSize() };
     pipeline_state.PS = { reinterpret_cast<UINT8*>(pixel_shader->GetBufferPointer()), pixel_shader->GetBufferSize() };
     pipeline_state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    pipeline_state.RasterizerState.FrontCounterClockwise = TRUE;
     pipeline_state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
     pipeline_state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
     pipeline_state.SampleMask = UINT_MAX;
@@ -131,13 +134,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     // Load mesh
     CommandGraph copy_graph(kWorkerCount, QueueType::Copy, &dev);
     
-    Mesh monkey;
-    monkey.BuildFromOBJ(&dev, copy_graph, "monkey.obj");
-    vector<Mesh> monkeys(100);
-    for (auto& m : monkeys) m = monkey;
+    //Mesh monkey;
+    //monkey.BuildFromOBJ(&dev, copy_graph, "monkey.obj");
+    vector<unique_ptr<Mesh>> monkeys(80);
+    for (auto& m : monkeys) 
+    {
+        m = make_unique<Mesh>();
+        m->BuildFromOBJ(&dev, copy_graph, "monkey.obj");
+    }
 
     copy_graph.Build(&dev);
     copy_graph.Execute(&dev);
+
+    // Create CB
+    struct alignas(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT) CBData
+    {
+        XMFLOAT4X4 World;
+        XMFLOAT4X4 WVP;
+    };
+    ConstantBuffer<CBData> cb;
+    cb.Create(&dev, monkeys.size());
 
     // -------------------------------
     //      Render setup
@@ -172,10 +188,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
         cl->SetGraphicsRootSignature(root_signature.Get());
         cl->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         cl->OMSetRenderTargets(1, &*backbuffer.GetHandle(), false, &*depth_buffer.GetDSV()); 
+
+        // TODO : Move this to a function on the device that sets all the heaps
+        ID3D12DescriptorHeap* desc_vec[] = { dev.GetDescriptorPool(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetHeap() };
+        cl->SetDescriptorHeaps(1, desc_vec);
     },
     [&](ID3D12GraphicsCommandList* cl, uint32_t idx)
     {
-        monkeys[idx].Draw(cl);
+        cl->SetGraphicsRootDescriptorTable(0, cb.GetView(idx).GetGPUDescriptor());
+
+        monkeys[idx]->Draw(cl);
     }, {"Clear"}, monkeys.size());
 
     commands.AddNode("Present", nullptr, [&](ID3D12GraphicsCommandList* cl, uint32_t)
@@ -184,6 +206,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     }, {"Draw"});
 
     commands.Build(&dev);
+
+    // Create projection matrices
+    auto view_matrix = XMMatrixLookAtRH(XMVectorSet(0, 1, -2, 0), XMVectorSet(0, 0, 1, 0), XMVectorSet(0, 1, 0, 0));
+    auto proj_matrix = XMMatrixPerspectiveFovRH(90_deg, viewport.Width / viewport.Height, 0.01, 1000);
 
     // -------------------------------
     //      Render loop
@@ -208,6 +234,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     // Enter the render loop
     window.CallDuringIdle([&](double elapsed_time)
     {
+        float delta_seconds = elapsed_time / 1000.0f;
+        static float time = 0;
+        time += delta_seconds;
+
+        for (int idx = 0; idx < monkeys.size(); idx++)
+        {
+            CBData data;
+            auto wvp = XMMatrixScaling(0.75, 0.75, 0.75);
+            wvp = XMMatrixMultiply(wvp, XMMatrixRotationRollPitchYaw(0, sin(idx + time * 0.5),0));
+            wvp = XMMatrixMultiply(wvp, XMMatrixTranslation(cos(idx + time*0.75)*2, sin(idx + time*0.6)*2.5, idx));
+
+            XMStoreFloat4x4(&data.World, XMMatrixTranspose(wvp));
+
+            wvp = XMMatrixMultiply(wvp, view_matrix);
+            wvp = XMMatrixMultiply(wvp, proj_matrix);
+
+            XMStoreFloat4x4(&data.WVP, XMMatrixTranspose(wvp));
+
+            cb.Update(data, idx);
+        }
+
         frame_time = elapsed_time;
 
         auto start = chrono::high_resolution_clock::now();

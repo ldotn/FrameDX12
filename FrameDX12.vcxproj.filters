@@ -46,9 +46,6 @@
     <ClInclude Include="Resource\CommitedResource.h">
       <Filter>Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Resource\DescriptorVector.h">
-      <Filter>Resource</Filter>
-    </ClInclude>
     <ClInclude Include="Resource\PipelineStateObjectPool.h">
       <Filter>Resource</Filter>
     </ClInclude>
@@ -59,6 +56,12 @@
       <Filter>Resource</Filter>
     </ClInclude>
     <ClInclude Include="Resource\Mesh.h">
+      <Filter>Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource\ConstantBuffer.h">
+      <Filter>Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource\DescriptorPool.h">
       <Filter>Resource</Filter>
     </ClInclude>
   </ItemGroup>
@@ -87,9 +90,6 @@
     <ClCompile Include="Resource\CommitedResource.cpp">
       <Filter>Resource</Filter>
     </ClCompile>
-    <ClCompile Include="Resource\DescriptorVector.cpp">
-      <Filter>Resource</Filter>
-    </ClCompile>
     <ClCompile Include="Resource\PipelineStateObjectPool.cpp">
       <Filter>Resource</Filter>
     </ClCompile>
@@ -97,6 +97,9 @@
       <Filter>Resource</Filter>
     </ClCompile>
     <ClCompile Include="Resource\Mesh.cpp">
+      <Filter>Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Resource\DescriptorPool.cpp">
       <Filter>Resource</Filter>
     </ClCompile>
   </ItemGroup>

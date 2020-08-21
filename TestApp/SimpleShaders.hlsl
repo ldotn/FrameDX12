@@ -1,3 +1,9 @@
+cbuffer ConstantBuffer : register(b0)
+{
+	float4x4 World;
+	float4x4 WVP;
+};
+
 struct VSIn
 {
 	float3 pos : POSITION;
@@ -16,14 +22,15 @@ PSIn VSMain(VSIn input)
 {
 	PSIn output = (PSIn)0;
 
-	output.spos = float4(input.pos*0.5, 1.0f);
-	output.spos.x *= 9.0f / 16.0f;
-	output.spos.z = (output.spos.z + 1.6) / 3.2;
-	output.normal = input.normal;
+	output.spos = mul(float4(input.pos, 1.0f), WVP);
+
+	output.normal = mul(input.normal, (float3x3)World);
 	return output;
 }
 
 float4 PSMain(PSIn input) : SV_Target0
 {
-	return float4(input.normal, 1.0f);
+	float3 n = normalize(input.normal);
+
+	return float4(n*0.5+0.5, 1.0f);
 }

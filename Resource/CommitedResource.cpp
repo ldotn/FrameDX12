@@ -27,13 +27,13 @@ void CommitedResource::Create(	Device* device,
 
 void CommitedResource::CreateDSV()
 {
-	mDSV = mDevice->GetDescriptorVector(D3D12_DESCRIPTOR_HEAP_TYPE_DSV).GetNextDescriptor();
+	mDSV = mDevice->GetDescriptorPool(D3D12_DESCRIPTOR_HEAP_TYPE_DSV).GetNextDescriptor();
 	mDevice->GetDevice()->CreateDepthStencilView(mResource.Get(), nullptr, *mDSV);
 }
 
 void CommitedResource::CreateCBV()
 {
-	mCBV = mDevice->GetDescriptorVector(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetNextDescriptor();
+	mCBV = mDevice->GetDescriptorPool(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetNextDescriptor();
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
 	desc.SizeInBytes = mDescription.Width;
@@ -44,13 +44,13 @@ void CommitedResource::CreateCBV()
 
 void CommitedResource::CreateSRV(D3D12_SHADER_RESOURCE_VIEW_DESC* desc_ptr)
 {
-	mSRV = mDevice->GetDescriptorVector(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetNextDescriptor();
+	mSRV = mDevice->GetDescriptorPool(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetNextDescriptor();
 	mDevice->GetDevice()->CreateShaderResourceView(mResource.Get(), desc_ptr, *mSRV);
 }
 
 void CommitedResource::CreateUAV(D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_ptr, ComPtr<ID3D12Resource> counter)
 {
-	mUAV = mDevice->GetDescriptorVector(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetNextDescriptor();
+	mUAV = mDevice->GetDescriptorPool(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetNextDescriptor();
 	mDevice->GetDevice()->CreateUnorderedAccessView(mResource.Get(), counter.Get(), desc_ptr, *mUAV);
 }
 

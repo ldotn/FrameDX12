@@ -30,7 +30,8 @@
     <ClInclude Include="Device\Device.h" />
     <ClInclude Include="Resource\BufferedResource.h" />
     <ClInclude Include="Resource\CommitedResource.h" />
-    <ClInclude Include="Resource\DescriptorVector.h" />
+    <ClInclude Include="Resource\ConstantBuffer.h" />
+    <ClInclude Include="Resource\DescriptorPool.h" />
     <ClInclude Include="Resource\PipelineStateObjectPool.h" />
     <ClInclude Include="Resource\RenderTarget.h" />
     <ClInclude Include="Resource\RootSignature.h" />
@@ -45,7 +46,7 @@
     <ClCompile Include="Device\CommandListPool.cpp" />
     <ClCompile Include="Device\Device.cpp" />
     <ClCompile Include="Resource\CommitedResource.cpp" />
-    <ClCompile Include="Resource\DescriptorVector.cpp" />
+    <ClCompile Include="Resource\DescriptorPool.cpp" />
     <ClCompile Include="Resource\Mesh.cpp" />
     <ClCompile Include="Resource\PipelineStateObjectPool.cpp" />
     <ClCompile Include="Resource\RenderTarget.cpp" />

@@ -48,6 +48,10 @@ namespace FrameDX12
 		} mDesc;
 
 	public:
+		Mesh() = default;
+		Mesh(Mesh&&) = default;
+		Mesh(const Mesh&) = delete;
+
 		// Creates a mesh from an OBJ file
 		// Adds all necessary commands to the referenced graph. The commands are all copy so you can use the copy queue here
 		// Remember to call Build and Execute on the graph, and wait for the results, before drawing!

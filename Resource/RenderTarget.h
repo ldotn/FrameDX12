@@ -1,6 +1,6 @@
 #pragma once
 #include "BufferedResource.h"
-#include "DescriptorVector.h"
+#include "DescriptorPool.h"
 
 namespace FrameDX12
 {

@@ -11,7 +11,7 @@ void RenderTarget::CreateFromSwapchain(Device* device)
 	{
 		ThrowIfFailed(device->GetSwapChain()->GetBuffer(i, IID_PPV_ARGS(&mResource[i])));
 
-		Descriptor handle = device->GetDescriptorVector(D3D12_DESCRIPTOR_HEAP_TYPE_RTV).GetNextDescriptor();
+		Descriptor handle = device->GetDescriptorPool(D3D12_DESCRIPTOR_HEAP_TYPE_RTV).GetNextDescriptor();
 		device->GetDevice()->CreateRenderTargetView(mResource[i].Get(), nullptr, *handle);
 		return handle;
 	});

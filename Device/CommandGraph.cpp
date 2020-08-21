@@ -143,7 +143,7 @@ CommandGraph::CommandGraph(size_t num_workers, QueueType type, Device* device_pt
 						if (current_node) PIXEndEvent(mCommandLists[worker_id].Get());
 					}
 				}
-
+				if (current_node) PIXEndEvent(mCommandLists[worker_id].Get());
 				mCommandLists[worker_id]->Close();
 				SetEvent(mWorkerFinishedEvents[worker_id]);
 			}

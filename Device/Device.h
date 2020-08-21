@@ -1,6 +1,6 @@
 #pragma once
 #include "../Core/stdafx.h"
-#include "../Resource/DescriptorVector.h"
+#include "../Resource/DescriptorPool.h"
 #include "../Resource/PipelineStateObjectPool.h"
 
 namespace FrameDX12
@@ -105,10 +105,10 @@ namespace FrameDX12
 		// Waits for the queue to finish
 		void WaitForQueue(QueueType queue);
 
-		// Returns a reference to the descriptor vector
-		DescriptorVector& GetDescriptorVector(D3D12_DESCRIPTOR_HEAP_TYPE type)
+		// Returns a reference to the descriptor pool
+		DescriptorPool& GetDescriptorPool(D3D12_DESCRIPTOR_HEAP_TYPE type)
 		{
-			return mDescriptorVectors[type];
+			return mDescriptorPools[type];
 		}
 
 		ID3D12PipelineState* GetPSO(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc) { return mPSOPool.GetPSO(desc); }
@@ -142,7 +142,7 @@ namespace FrameDX12
 		ComPtr<IDXGISwapChain> mSwapChain;
 		int mSwapChainVersion;
 
-		DescriptorVector mDescriptorVectors[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
+		DescriptorPool mDescriptorPools[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
 
 		PipelineStateObjectPool mPSOPool;
 	};
