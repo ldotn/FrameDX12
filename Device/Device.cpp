@@ -116,10 +116,10 @@ Device::Device(Window* window_ptr, int adapter_index)
 	ThrowIfFailed(mD3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCopyQueue)));
 
 	// Create fences
-	for (auto& [fence, value, sync_event] : mFences)
+	for (auto& [fence, last_work_id, sync_event] : mFences)
 	{
-		value = 0;
-		ThrowIfFailed(mD3DDevice->CreateFence(value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+		last_work_id = 0;
+		ThrowIfFailed(mD3DDevice->CreateFence(last_work_id, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
 		sync_event = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
 	}
 
@@ -177,19 +177,30 @@ Device::Device(Window* window_ptr, int adapter_index)
 	}
 }
 
-void Device::SignalQueueWork(QueueType queue)
+uint64_t Device::SignalQueueWork(QueueType queue)
 {
 	auto& fence = mFences[QueueTypeToIndex(queue)];
-	ThrowIfFailed(GetQueue(queue)->Signal(fence.fence.Get(), fence.value));
-	fence.value++;
+	++fence.last_work_id;
+	ThrowIfFailed(GetQueue(queue)->Signal(fence.fence.Get(), fence.last_work_id));
+	return fence.last_work_id;
 }
 
 void Device::WaitForQueue(QueueType queue)
 {
 	auto& fence = mFences[QueueTypeToIndex(queue)];
-	if (fence.fence->GetCompletedValue() < fence.value - 1)
+	if (fence.fence->GetCompletedValue() < fence.last_work_id)
 	{
-		ThrowIfFailed(fence.fence->SetEventOnCompletion(fence.value - 1, fence.sync_event));
+		ThrowIfFailed(fence.fence->SetEventOnCompletion(fence.last_work_id, fence.sync_event));
+		WaitForSingleObject(fence.sync_event, INFINITE);
+	}
+}
+
+void Device::WaitForWork(QueueType queue, uint64_t id)
+{
+	auto& fence = mFences[QueueTypeToIndex(queue)];
+	if (fence.fence->GetCompletedValue() < id)
+	{
+		ThrowIfFailed(fence.fence->SetEventOnCompletion(id, fence.sync_event));
 		WaitForSingleObject(fence.sync_event, INFINITE);
 	}
 }

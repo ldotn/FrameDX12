@@ -85,6 +85,7 @@ Setup --> RenderObjects ----> PostPro --> Present
 		void Build(Device* device);
 
 		// Executes the graph dividing the work over multiple threads
+		// Returns the workload id, so you're able to wait for this specific Execute to finish
 		// ------------------------------------------------------------------------------------------------------------------
 		// If the nodes have very different workloads this is not the most efficient as you are waiting for an entire graph level to finish before moving to the next
 		// The problem with adding the nodes to the work queue as soon as their dependencies finish is that you need to force stop all threads, do and execute, reset the CLs and continue writing
@@ -94,7 +95,7 @@ Setup --> RenderObjects ----> PostPro --> Present
 		//							Allocators are buffered but you do need to wait if you are using the same allocator again
 		//
 		// Side note: Repeats are executed counting down from the biggest index.
-		void Execute(Device * device, ID3D12PipelineState* initial_state = nullptr);
+		uint64_t Execute(Device * device, ID3D12PipelineState* initial_state = nullptr);
 	private:
 		QueueType mType;
 

@@ -44,6 +44,9 @@ namespace FrameDX12
 		std::queue<INT> mFreeIndexes;
 
 		ID3D12DescriptorHeap* mHeap = nullptr;
+		D3D12_CPU_DESCRIPTOR_HANDLE mCPUHeapStart;
+		D3D12_GPU_DESCRIPTOR_HANDLE mGPUHeapStart;
+
 		UINT mEntrySize;
 		UINT mSize;
 		std::atomic<UINT> mCurrentTop;

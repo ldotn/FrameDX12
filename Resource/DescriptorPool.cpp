@@ -18,6 +18,8 @@ void DescriptorPool::Initialize(class Device* device, D3D12_DESCRIPTOR_HEAP_TYPE
 	mEntrySize = device->GetDevice()->GetDescriptorHandleIncrementSize(type);
 	mCurrentTop = 0;
 	mSize = size;
+	mCPUHeapStart = mHeap->GetCPUDescriptorHandleForHeapStart();
+	mGPUHeapStart = mHeap->GetGPUDescriptorHandleForHeapStart();
 }
 
 DescriptorPool::~DescriptorPool()
@@ -77,11 +79,11 @@ Descriptor::~Descriptor()
 
 CD3DX12_CPU_DESCRIPTOR_HANDLE Descriptor::operator*()
 {
-	return CD3DX12_CPU_DESCRIPTOR_HANDLE(mPool->GetHeap()->GetCPUDescriptorHandleForHeapStart(), mIndex, mPool->mEntrySize);
+	return CD3DX12_CPU_DESCRIPTOR_HANDLE(mPool->mCPUHeapStart, mIndex, mPool->mEntrySize);
 }
 CD3DX12_GPU_DESCRIPTOR_HANDLE Descriptor::GetGPUDescriptor()
 {
-	return CD3DX12_GPU_DESCRIPTOR_HANDLE(mPool->GetHeap()->GetGPUDescriptorHandleForHeapStart(), mIndex, mPool->mEntrySize);
+	return CD3DX12_GPU_DESCRIPTOR_HANDLE(mPool->mGPUHeapStart, mIndex, mPool->mEntrySize);
 }
 
 bool Descriptor::IsValid() const

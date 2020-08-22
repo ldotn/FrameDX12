@@ -100,7 +100,11 @@ namespace FrameDX12
 		}
 
 		// Signals the fence of the queue and increases the value
-		void SignalQueueWork(QueueType queue);
+		// Returns the fence value (functions as a workload id)
+		uint64_t SignalQueueWork(QueueType queue);
+
+		// Waits for a specific id (fence value) on the queue
+		void WaitForWork(QueueType queue, uint64_t id);
 
 		// Waits for the queue to finish
 		void WaitForQueue(QueueType queue);
@@ -135,7 +139,7 @@ namespace FrameDX12
 		struct
 		{
 			ComPtr<ID3D12Fence> fence;
-			UINT64 value;
+			uint64_t last_work_id;
 			HANDLE sync_event;
 		} mFences[3];
 

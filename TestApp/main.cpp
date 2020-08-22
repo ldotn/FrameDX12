@@ -136,7 +136,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     
     //Mesh monkey;
     //monkey.BuildFromOBJ(&dev, copy_graph, "monkey.obj");
+#ifdef NDEBUG 
+    // TODO : Add a Duplicate function on the mesh
     vector<unique_ptr<Mesh>> monkeys(80);
+#else
+    // Model loading takes a good time on debug
+    vector<unique_ptr<Mesh>> monkeys(3);
+#endif
     for (auto& m : monkeys) 
     {
         m = make_unique<Mesh>();
@@ -195,6 +201,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     },
     [&](ID3D12GraphicsCommandList* cl, uint32_t idx)
     {
+        idx %= monkeys.size();
+
         cl->SetGraphicsRootDescriptorTable(0, cb.GetView(idx).GetGPUDescriptor());
 
         monkeys[idx]->Draw(cl);
@@ -231,6 +239,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     });
     metrics_printer.detach();
 
+    uint64_t execute_ids[kResourceBufferCount] = {};
+
     // Enter the render loop
     window.CallDuringIdle([&](double elapsed_time)
     {
@@ -257,22 +267,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
         frame_time = elapsed_time;
 
+        // Make sure we are finished with this frame resources before executing
+        dev.WaitForWork(QueueType::Graphics, execute_ids[sCurrentResourceBufferIndex]);
+
         auto start = chrono::high_resolution_clock::now();
-            commands.Execute(&dev, dev.GetPSO(pipeline_state));
+            execute_ids[sCurrentResourceBufferIndex] = commands.Execute(&dev, dev.GetPSO(pipeline_state));
         auto end = chrono::high_resolution_clock::now();
         execute_cl_time = chrono::duration_cast<chrono::nanoseconds>((end - start)).count() / 1e6;
 
         dev.GetSwapChain()->Present(0, 0);
 
         // Advance buffer index
-        sCurrentResourceBufferIndex++;
-
-        // If we are going to roll back to the first allocator, then we need to wait
-        if (sCurrentResourceBufferIndex % kResourceBufferCount == 0)
-        {
-            dev.WaitForQueue(QueueType::Graphics);
-            // Add the other queues if you are doing work there
-        }
+        sCurrentResourceBufferIndex = (sCurrentResourceBufferIndex + 1) % kResourceBufferCount;
 
         return false;
     });

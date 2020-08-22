@@ -219,7 +219,7 @@ void CommandGraph::Build(Device* device)
 	mNamedNodes.clear();
 }
 
-void CommandGraph::Execute(Device* device, ID3D12PipelineState* initial_state)
+uint64_t CommandGraph::Execute(Device* device, ID3D12PipelineState* initial_state)
 {
 	using namespace std;
 	using namespace fpp;
@@ -269,7 +269,7 @@ void CommandGraph::Execute(Device* device, ID3D12PipelineState* initial_state)
 	}
 
 	// Signal the fence
-	device->SignalQueueWork(mType);
+	return device->SignalQueueWork(mType);
 }
 
 CommandGraph::~CommandGraph()
