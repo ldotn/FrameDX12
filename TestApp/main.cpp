@@ -176,24 +176,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
         cl->ClearDepthStencilView(*depth_buffer.GetDSV(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
     }, {});
 
-    // TODO : Add functions on the window to return this structs
-    D3D12_VIEWPORT viewport = {};
-    viewport.Width = window.GetSizeX();
-    viewport.Height = window.GetSizeY();
-    viewport.MaxDepth = 1.0f;
-
-    D3D12_RECT scissor_rect = {};
-    scissor_rect.right = static_cast<LONG>(viewport.Width);
-    scissor_rect.bottom = static_cast<LONG>(viewport.Height);
-
     commands.AddNode("Draw", [&](ID3D12GraphicsCommandList* cl)
     {
-        // While this state is shared, and could be set earlier, doing execute command lists seems to clear it
-        cl->RSSetViewports(1, &viewport);
-        cl->RSSetScissorRects(1, &scissor_rect);
+        // While this state is shared, and could be set earlier, doing execute command lists clears it
+        D3D12_VIEWPORT viewports[] = { window.GetViewport() };
+        D3D12_RECT view_rects[] = { window.GetRect() };
+        cl->RSSetViewports(1, viewports);
+        cl->RSSetScissorRects(1, view_rects);
         cl->SetGraphicsRootSignature(root_signature.Get());
         cl->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        cl->OMSetRenderTargets(1, &*backbuffer.GetHandle(), false, &*depth_buffer.GetDSV()); 
+
+        D3D12_CPU_DESCRIPTOR_HANDLE rts[] = { *backbuffer.GetHandle() };
+        D3D12_CPU_DESCRIPTOR_HANDLE dsv = *depth_buffer.GetDSV();
+        cl->OMSetRenderTargets(1, rts, false, &dsv);
 
         // TODO : Move this to a function on the device that sets all the heaps
         ID3D12DescriptorHeap* desc_vec[] = { dev.GetDescriptorPool(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetHeap() };
@@ -217,7 +212,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
     // Create projection matrices
     auto view_matrix = XMMatrixLookAtRH(XMVectorSet(0, 1, -2, 0), XMVectorSet(0, 0, 1, 0), XMVectorSet(0, 1, 0, 0));
-    auto proj_matrix = XMMatrixPerspectiveFovRH(90_deg, viewport.Width / viewport.Height, 0.01, 1000);
+    auto proj_matrix = XMMatrixPerspectiveFovRH(90_deg, window.GetSizeX() / (float)window.GetSizeY(), 0.01, 1000);
 
     // -------------------------------
     //      Render loop
@@ -245,15 +240,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     window.CallDuringIdle([&](double elapsed_time)
     {
         float delta_seconds = elapsed_time / 1000.0f;
-        static float time = 0;
-        time += delta_seconds;
+        static float game_seconds = 0;
+        game_seconds += delta_seconds;
 
         for (int idx = 0; idx < monkeys.size(); idx++)
         {
             CBData data;
             auto wvp = XMMatrixScaling(0.75, 0.75, 0.75);
-            wvp = XMMatrixMultiply(wvp, XMMatrixRotationRollPitchYaw(0, sin(idx + time * 0.5),0));
-            wvp = XMMatrixMultiply(wvp, XMMatrixTranslation(cos(idx + time*0.75)*2, sin(idx + time*0.6)*2.5, idx));
+            wvp = XMMatrixMultiply(wvp, XMMatrixRotationRollPitchYaw(0, sin(idx + game_seconds * 0.5),0));
+            wvp = XMMatrixMultiply(wvp, XMMatrixTranslation(cos(idx + game_seconds *0.75)*2, sin(idx + game_seconds *0.6)*2.5, idx));
 
             XMStoreFloat4x4(&data.World, XMMatrixTranspose(wvp));
 

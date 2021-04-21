@@ -15,9 +15,10 @@ void CommitedResource::Create(	Device* device,
 {
 	mDevice = device;
 	mStates = initial_states;
-
+	
+	auto heap_props = CD3DX12_HEAP_PROPERTIES(heap_type);
 	ThrowIfFailed(mDevice->GetDevice()->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(heap_type),
+		&heap_props,
 		heap_flags,
 		&description,
 		initial_states,
@@ -58,7 +59,8 @@ void CommitedResource::Transition(ID3D12GraphicsCommandList* cl, D3D12_RESOURCE_
 {
 	if (mStates != new_states)
 	{
-		cl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mResource.Get(), mStates, new_states));
+		CD3DX12_RESOURCE_BARRIER transitions[] = { CD3DX12_RESOURCE_BARRIER::Transition(mResource.Get(), mStates, new_states) };
+		cl->ResourceBarrier(1, transitions);
 		mStates = new_states;
 	}
 }

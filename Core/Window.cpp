@@ -107,3 +107,22 @@ Window::Window(std::wstring Name, std::uint32_t SizeX, std::uint32_t SizeY, bool
 	ShowWindow(mWindowHandle, SW_SHOWDEFAULT);
 	ThrowIfFalse(UpdateWindow(mWindowHandle));
 }
+
+D3D12_VIEWPORT Window::GetViewport(float max_depth) const
+{
+	D3D12_VIEWPORT viewport = {};
+	viewport.Width = mSizeX;
+	viewport.Height = mSizeY;
+	viewport.MaxDepth = max_depth;
+	return viewport;
+}
+
+D3D12_RECT Window::GetRect() const
+{
+	D3D12_RECT scissor_rect = {};
+	scissor_rect.right = static_cast<LONG>(mSizeX);
+	scissor_rect.bottom = static_cast<LONG>(mSizeY);
+	return scissor_rect;
+}
+
+

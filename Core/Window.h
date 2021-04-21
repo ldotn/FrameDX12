@@ -26,6 +26,8 @@ namespace FrameDX12
 		uint32_t GetSizeY() const { return mSizeY; }
 		HWND GetHandle() const { return mWindowHandle; }
 		bool IsFullscreen() const { return mFullscreen; }
+		D3D12_VIEWPORT GetViewport(float max_depth = 1.0f) const;
+		D3D12_RECT GetRect() const;
 	private:
 		static LRESULT WINAPI InternalMessageProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

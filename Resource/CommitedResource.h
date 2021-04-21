@@ -55,10 +55,13 @@ namespace FrameDX12
 
 			if (!upload_resource)
 			{
+				auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+				auto buff_desc = CD3DX12_RESOURCE_DESC::Buffer(data_desc.RowPitch);
+
 				ThrowIfFailed(mDevice->GetDevice()->CreateCommittedResource(
-					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+					&heap_prop,
 					D3D12_HEAP_FLAG_NONE,
-					&CD3DX12_RESOURCE_DESC::Buffer(data_desc.RowPitch),
+					&buff_desc,
 					D3D12_RESOURCE_STATE_GENERIC_READ,
 					nullptr,
 					IID_PPV_ARGS(&upload_resource)));

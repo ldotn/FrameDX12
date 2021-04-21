@@ -21,7 +21,8 @@ void RenderTarget::Transition(ID3D12GraphicsCommandList* cl, D3D12_RESOURCE_STAT
 {
 	if (mStates != new_states)
 	{
-		cl->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(GetResource().Get(), mStates, new_states));
+		CD3DX12_RESOURCE_BARRIER transitions[] = { CD3DX12_RESOURCE_BARRIER::Transition(GetResource().Get(), mStates, new_states) };
+		cl->ResourceBarrier(1, transitions);
 		mStates = new_states;
 	}
 }

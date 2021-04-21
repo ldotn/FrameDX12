@@ -104,6 +104,7 @@ namespace FrameDX12
 		uint64_t SignalQueueWork(QueueType queue);
 
 		// Waits for a specific id (fence value) on the queue
+		// It will also wait for all prior work
 		void WaitForWork(QueueType queue, uint64_t id);
 
 		// Waits for the queue to finish
