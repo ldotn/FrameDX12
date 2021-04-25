@@ -3,6 +3,7 @@
 #include "tiny_obj_loader.h"
 #include "../Device/CommandGraph.h"
 #include "../Core/Utils.h"
+#include <DirectXMesh.h>
 
 using namespace FrameDX12;
 
@@ -64,7 +65,25 @@ void Mesh::BuildFromOBJ(Device* device, CommandGraph& copy_graph, const std::str
     mDesc.vertex_count = mVertices.size();
     mDesc.triangle_count = mDesc.index_count / 3;
 
-    // TODO : Compute tangents
+    // Using DirectXMesh to create the tangents
+    // Need to unpack the struct for the dx tangent frame computation
+    // TODO : Find a way to avoid this duplications
+    vector<DirectX::XMFLOAT3> raw_vertices(mVertices.size());
+    vector<DirectX::XMFLOAT3> raw_normals(mVertices.size());
+    vector<DirectX::XMFLOAT2> raw_uvs(mVertices.size());
+
+    for (auto [idx, vertex] : fpp::enumerate(mVertices))
+    {
+        raw_vertices[idx] = vertex.position;
+        raw_normals[idx]  = vertex.normal;
+        raw_uvs[idx]      = vertex.uv;
+    }
+
+    vector<DirectX::XMFLOAT4> raw_tangents(mVertices.size());
+    DirectX::ComputeTangentFrame(mIndices.data(), mDesc.triangle_count, raw_vertices.data(), raw_normals.data(), raw_uvs.data(), mDesc.vertex_count, raw_tangents.data());
+
+    for (auto [tangent, vertex] : fpp::zip(raw_tangents, mVertices))
+        vertex.tangent = tangent;
 
     // Create GPU-side buffers
     mIndexBuffer.Create(device, CD3DX12_RESOURCE_DESC::Buffer(mIndices.size() * sizeof(uint32_t)));

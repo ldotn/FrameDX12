@@ -8,15 +8,15 @@ namespace FrameDX12
 	{
 		inline static D3D12_INPUT_ELEMENT_DESC sDesc[] =
 		{
-			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0                           , D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "NORMAL"  , 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "TANGENT" , 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "UV"      , 0, DXGI_FORMAT_R32G32_FLOAT   , 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT   , 0, 0                           , D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "NORMAL"  , 0, DXGI_FORMAT_R32G32B32_FLOAT   , 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "TANGENT" , 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }, // w is the sign, used to flip
+			{ "UV"      , 0, DXGI_FORMAT_R32G32_FLOAT      , 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 		};
 
 		DirectX::XMFLOAT3 position;
 		DirectX::XMFLOAT3 normal;
-		DirectX::XMFLOAT3 tangent;
+		DirectX::XMFLOAT4 tangent;
 		DirectX::XMFLOAT2 uv;
 
 		bool operator==(const StandardVertex& other) const
@@ -25,7 +25,7 @@ namespace FrameDX12
 			
 			return XMVector3Equal(XMLoadFloat3(&position), XMLoadFloat3(&other.position)) &&
 				   XMVector3Equal(XMLoadFloat3(&normal)  , XMLoadFloat3(&other.normal)  ) &&
-				   XMVector3Equal(XMLoadFloat3(&tangent) , XMLoadFloat3(&other.tangent) ) &&
+				   XMVector3Equal(XMLoadFloat4(&tangent) , XMLoadFloat4(&other.tangent) ) &&
 				   XMVector2Equal(XMLoadFloat2(&uv)      , XMLoadFloat2(&other.uv)      );
 		}
 	};
