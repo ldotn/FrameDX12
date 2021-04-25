@@ -87,7 +87,7 @@ void Mesh::BuildFromOBJ(Device* device, CommandGraph& copy_graph, const std::str
     mIBV.Format = DXGI_FORMAT_R32_UINT;
 }
 
-void Mesh::Draw(ID3D12GraphicsCommandList* cl)
+void Mesh::Draw(ID3D12GraphicsCommandList* cl, uint32_t instances_count)
 {
     // Remember, the transitions do nothing (that is, this function, not DX barriers) if the resource is already on the state you want
     mVertexBuffer.Transition(cl, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
@@ -95,5 +95,5 @@ void Mesh::Draw(ID3D12GraphicsCommandList* cl)
 
     cl->IASetIndexBuffer(&mIBV);
     cl->IASetVertexBuffers(0, 1, &mVBV);
-    cl->DrawIndexedInstanced(mIndices.size(), 1, 0, 0, 0);
+    cl->DrawIndexedInstanced(mIndices.size(), instances_count, 0, 0, 0);
 }

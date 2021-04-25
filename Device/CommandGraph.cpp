@@ -126,7 +126,7 @@ CommandGraph::CommandGraph(size_t num_workers, QueueType type, Device* device_pt
 						if(node->init) node->init(mCommandLists[worker_id].Get());
 					}
 
-					node->body(mCommandLists[worker_id].Get(), work_index);
+					if(node->body) node->body(mCommandLists[worker_id].Get(), work_index);
 
 					if (work_index == 0)
 					{

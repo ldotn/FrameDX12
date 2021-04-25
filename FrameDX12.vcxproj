@@ -36,6 +36,7 @@
     <ClInclude Include="Resource\RenderTarget.h" />
     <ClInclude Include="Resource\RootSignature.h" />
     <ClInclude Include="Resource\Mesh.h" />
+    <ClInclude Include="Resource\StructuredBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Error.cpp" />

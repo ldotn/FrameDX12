@@ -10,7 +10,7 @@ namespace FrameDX12
 	template<typename DataT>
 	class ConstantBuffer
 	{
-		static_assert(alignof(DataT) == D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, "Constant buffer struct need to be aligned to D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT bytes");
+		static_assert(alignof(DataT) == D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, "Constant buffer data needs to be aligned to D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT bytes");
 	public:
 		void Create(Device * device, size_t count = 1)
 		{

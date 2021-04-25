@@ -59,7 +59,7 @@ namespace FrameDX12
 
 		// Sets the buffers and the draw command
 		// Assumes that the IA is set to triangle list
-		void Draw(ID3D12GraphicsCommandList* cl);
+		void Draw(ID3D12GraphicsCommandList* cl, uint32_t instances_count = 1);
 
 		Description GetDesc() const { return mDesc; }
 	private:

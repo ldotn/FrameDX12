@@ -1,3 +1,4 @@
+#if 1
 #define WIN32_LEAN_AND_MEAN // Exclude rarely used stuff from Windows headers
 #define NOMINMAX
 #include <Windows.h>
@@ -10,6 +11,7 @@
 #include "../Resource/CommitedResource.h"
 #include "../Resource/Mesh.h"
 #include "../Resource/ConstantBuffer.h"
+#include "../Resource/StructuredBuffer.h"
 #include <iostream>
 #include "pix3.h"
 
@@ -77,7 +79,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     ComPtr<ID3D12RootSignature> root_signature;
     {
         CD3DX12_DESCRIPTOR_RANGE ranges[1]; // Perfomance TIP: Order from most frequent to least frequent.
-        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);		// 1 frequently changed constant buffer.
+        //ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);		// 1 frequently changed constant buffer.
+        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);		// no cb on this, using a structured buffer
 
         CD3DX12_ROOT_PARAMETER rootParameters[1];
         rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
@@ -104,10 +107,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
     // TODO : Handle failure
     ComPtr<ID3DBlob> error_blob;
-    LogCheck(D3DCompileFromFile(L"SimpleShaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertex_shader, &error_blob), LogCategory::Error);
+    LogCheck(D3DCompileFromFile(L"InstancingShaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertex_shader, &error_blob), LogCategory::Error);
     LogErrorBlob(error_blob);
 
-    LogCheck(D3DCompileFromFile(L"SimpleShaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixel_shader, &error_blob), LogCategory::Error);
+    LogCheck(D3DCompileFromFile(L"InstancingShaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixel_shader, &error_blob), LogCategory::Error);
     LogErrorBlob(error_blob);
 
     // Define pipeline state 
@@ -133,33 +136,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
     // Load mesh
     CommandGraph copy_graph(kWorkerCount, QueueType::Copy, &dev);
-    
-    //Mesh monkey;
-    //monkey.BuildFromOBJ(&dev, copy_graph, "monkey.obj");
-#ifdef NDEBUG 
-    // TODO : Add a Duplicate function on the mesh
-    vector<unique_ptr<Mesh>> monkeys(80);
-#else
-    // Model loading takes a good time on debug
-    vector<unique_ptr<Mesh>> monkeys(3);
-#endif
-    for (auto& m : monkeys) 
-    {
-        m = make_unique<Mesh>();
-        m->BuildFromOBJ(&dev, copy_graph, "monkey.obj");
-    }
+
+    Mesh monkey;
+    monkey.BuildFromOBJ(&dev, copy_graph, "monkey.obj");
+    constexpr uint32_t kInstancesCount = 10000;
 
     copy_graph.Build(&dev);
     copy_graph.Execute(&dev);
 
     // Create CB
-    struct alignas(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT) CBData
+    /*struct alignas(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT) CBData
+    {
+        XMFLOAT4X4 World[kInstancesCount];
+        XMFLOAT4X4 WVP[kInstancesCount];
+    };
+    ConstantBuffer<CBData> cb;
+    cb.Create(&dev);*/
+    struct InstanceData
     {
         XMFLOAT4X4 World;
         XMFLOAT4X4 WVP;
     };
-    ConstantBuffer<CBData> cb;
-    cb.Create(&dev, monkeys.size());
+    StructuredBuffer<InstanceData> instances_data_buffer;
+    vector<InstanceData> instances_data(kInstancesCount);
+    instances_data_buffer.Create(&dev, kInstancesCount);
+    instances_data_buffer.Map();
 
     // -------------------------------
     //      Render setup
@@ -168,17 +169,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     // Create the command graph
     CommandGraph commands(kWorkerCount, QueueType::Graphics, &dev);
 
-    commands.AddNode("Clear", nullptr, [&](ID3D12GraphicsCommandList* cl, uint32_t)
+    // For this demo we can do everything on one node
+    commands.AddNode("Clear Draw Present", nullptr, [&](ID3D12GraphicsCommandList* cl, uint32_t)
     {
+        // Clear
         backbuffer.Transition(cl, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
         cl->ClearRenderTargetView(*backbuffer.GetHandle(), DirectX::Colors::Magenta, 0, nullptr);
         cl->ClearDepthStencilView(*depth_buffer.GetDSV(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-    }, {});
 
-    commands.AddNode("Draw", [&](ID3D12GraphicsCommandList* cl)
-    {
-        // While this state is shared, and could be set earlier, doing execute command lists clears it
+        // Draw
         D3D12_VIEWPORT viewports[] = { window.GetViewport() };
         D3D12_RECT view_rects[] = { window.GetRect() };
         cl->RSSetViewports(1, viewports);
@@ -193,20 +193,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
         // TODO : Move this to a function on the device that sets all the heaps
         ID3D12DescriptorHeap* desc_vec[] = { dev.GetDescriptorPool(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetHeap() };
         cl->SetDescriptorHeaps(1, desc_vec);
-    },
-    [&](ID3D12GraphicsCommandList* cl, uint32_t idx)
-    {
-        idx %= monkeys.size();
 
-        cl->SetGraphicsRootDescriptorTable(0, cb.GetView(idx).GetGPUDescriptor());
+        //cl->SetGraphicsRootDescriptorTable(0, cb.GetView().GetGPUDescriptor());
+        cl->SetGraphicsRootDescriptorTable(0, instances_data_buffer.GetSRV().GetGPUDescriptor());
+        monkey.Draw(cl, kInstancesCount);
 
-        monkeys[idx]->Draw(cl);
-    }, {"Clear"}, monkeys.size());
-
-    commands.AddNode("Present", nullptr, [&](ID3D12GraphicsCommandList* cl, uint32_t)
-    {
+        // Present
         backbuffer.Transition(cl, D3D12_RESOURCE_STATE_PRESENT);
-    }, {"Draw"});
+    }, {});
 
     commands.Build(&dev);
 
@@ -243,22 +237,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
         static float game_seconds = 0;
         game_seconds += delta_seconds;
 
-        for (int idx = 0; idx < monkeys.size(); idx++)
+        for (int idx = 0; idx < kInstancesCount; idx++)
         {
-            CBData data;
             auto wvp = XMMatrixScaling(0.75, 0.75, 0.75);
-            wvp = XMMatrixMultiply(wvp, XMMatrixRotationRollPitchYaw(0, sin(idx + game_seconds * 0.5),0));
-            wvp = XMMatrixMultiply(wvp, XMMatrixTranslation(cos(idx + game_seconds *0.75)*2, sin(idx + game_seconds *0.6)*2.5, idx));
+            wvp = XMMatrixMultiply(wvp, XMMatrixRotationRollPitchYaw(0, sin(idx + game_seconds * 0.5), 0));
+            wvp = XMMatrixMultiply(wvp, XMMatrixTranslation(cos(idx + game_seconds * 0.75) * 2, sin(idx + game_seconds * 0.6) * 2.5, idx));
 
-            XMStoreFloat4x4(&data.World, XMMatrixTranspose(wvp));
+            XMStoreFloat4x4(&instances_data[idx].World, XMMatrixTranspose(wvp));
 
             wvp = XMMatrixMultiply(wvp, view_matrix);
             wvp = XMMatrixMultiply(wvp, proj_matrix);
 
-            XMStoreFloat4x4(&data.WVP, XMMatrixTranspose(wvp));
-
-            cb.Update(data, idx);
+            XMStoreFloat4x4(&instances_data[idx].WVP, XMMatrixTranspose(wvp));
         }
+
+        instances_data_buffer.Update(instances_data);
 
         frame_time = elapsed_time;
 
@@ -266,7 +259,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
         dev.WaitForWork(QueueType::Graphics, execute_ids[sCurrentResourceBufferIndex]);
 
         auto start = chrono::high_resolution_clock::now();
-            execute_ids[sCurrentResourceBufferIndex] = commands.Execute(&dev, dev.GetPSO(pipeline_state));
+        execute_ids[sCurrentResourceBufferIndex] = commands.Execute(&dev, dev.GetPSO(pipeline_state));
         auto end = chrono::high_resolution_clock::now();
         execute_cl_time = chrono::duration_cast<chrono::nanoseconds>((end - start)).count() / 1e6;
 
@@ -280,3 +273,4 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
     return 0;
 }
+#endif // 1

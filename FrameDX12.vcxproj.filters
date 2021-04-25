@@ -64,6 +64,9 @@
     <ClInclude Include="Resource\DescriptorPool.h">
       <Filter>Resource</Filter>
     </ClInclude>
+    <ClInclude Include="Resource\StructuredBuffer.h">
+      <Filter>Resource</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Log.cpp">
