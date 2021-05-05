@@ -43,9 +43,14 @@ Device::Device(Window* window_ptr, int adapter_index)
 		ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&factory)));
 	}
 
+	ComPtr<IDXGIFactory6> factory6;
+	const bool bCanSortAdapters = (factory->QueryInterface(IID_PPV_ARGS(&factory6)) == S_OK);
 	if (adapter_index == -1)
 	{
-		for (UINT i = 0; factory->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND; i++)
+		for (UINT i = 0; 
+			(bCanSortAdapters ? factory6->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)) : 
+				factory->EnumAdapters(i, &adapter)) != DXGI_ERROR_NOT_FOUND; 
+			i++)
 		{
 			DXGI_ADAPTER_DESC desc;
 			adapter->GetDesc(&desc);
@@ -57,7 +62,14 @@ Device::Device(Window* window_ptr, int adapter_index)
 		cin >> adapter_index;
 	}
 
-	factory->EnumAdapters(adapter_index, &adapter);
+	if (bCanSortAdapters)
+	{
+		factory6->EnumAdapterByGpuPreference(adapter_index, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter));
+	}
+	else
+	{
+		factory->EnumAdapters(adapter_index, &adapter);
+	}
 
 	// Create the device
 	// Try first with feature level 12.1

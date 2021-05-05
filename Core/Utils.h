@@ -115,7 +115,7 @@ namespace FrameDX12
 
 		// Do conversion and return
 		std::wstring output;
-		output.reserve(size);
+		output.resize(size);
 
 		MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, input.c_str(), input.size() + 1, output.data(), size);
 

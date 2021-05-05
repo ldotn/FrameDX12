@@ -50,6 +50,8 @@ namespace FrameDX12
 			int Line;
 			std::wstring Function;
 			std::wstring File;
+
+			friend std::wostream& operator<<(std::wostream& OutputStream, const Entry& Obj);
 		};
 
 		// Need to define the functions outside of the header otherwise you get a duplicated definition on the concurrent_vector for some reason
@@ -73,6 +75,7 @@ namespace FrameDX12
 		std::thread FirePrintThread(std::chrono::milliseconds Period = std::chrono::milliseconds(250));
 	private:
 		concurrency::concurrent_vector<Entry> Records;
-		const wchar_t* cat_name[(int)LogCategory::LogCategoryCount_] = { L"Info", L"Warning", L"Error", L"CriticalError" };
 	} Log;
+
+	std::wostream& operator<<(std::wostream& OutputStream, const log_::Entry& Obj);
 }

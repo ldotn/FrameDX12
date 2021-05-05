@@ -8,6 +8,8 @@ using namespace std;
 
 log_ FrameDX12::Log;
 
+const wchar_t* kLogCategoryNames[(int)LogCategory::LogCategoryCount_] = { L"Info", L"Warning", L"Error", L"CriticalError" };
+
 void log_::record_(const wstring & Message, LogCategory Category, int Line, const wstring & Function, const wstring & File)
 {
 	Entry e;
@@ -20,18 +22,30 @@ void log_::record_(const wstring & Message, LogCategory Category, int Line, cons
 
 	Records.push_back(e);
 
+#ifdef _DEBUG
+	wstringstream sstream;
+	sstream << e;
+	OutputDebugStringW(sstream.str().c_str());
+#endif
+}
+
+std::wostream& FrameDX12::operator<<(std::wostream& OutputStream, const log_::Entry& Obj)
+{
+	auto time = chrono::system_clock::to_time_t(Obj.Timestamp);
+	tm timeinfo;
+	localtime_s(&timeinfo, &time);
+	OutputStream << L"[" << put_time(&timeinfo, L"%T") << L"] " << kLogCategoryNames[(int)Obj.Category] << L" : " << Obj.Message << endl;
+	OutputStream << L"    on line " << Obj.Line << L" of file " << Obj.File << L", function " << Obj.Function << endl;
+
+	return OutputStream;
 }
 
 size_t log_::PrintAll(wostream & OutputStream)
 {
 	size_t count = 0;
-	for(const auto& e : Records)
+	for(const auto& entry : Records)
 	{
-		auto time = chrono::system_clock::to_time_t(e.Timestamp);
-		tm timeinfo;
-		localtime_s(&timeinfo, &time);
-		OutputStream << L"[" << put_time(&timeinfo, L"%T") << L"] " << cat_name[(int)e.Category] << L" : " << e.Message << endl;
-		OutputStream << L"    on line " << e.Line << L" of file " << e.File << L", function " << e.Function << endl;
+		OutputStream << entry;
 		count++;
 	}
 
@@ -43,12 +57,7 @@ size_t log_::PrintRange(wostream & OutputStream,size_t Start, size_t End)
 	size_t count = 0;
 	for(size_t i = Start; i < End && i < Records.size(); i++)
 	{
-		const auto& e = Records[i];
-		auto time = chrono::system_clock::to_time_t(e.Timestamp);
-		tm timeinfo;
-		localtime_s(&timeinfo, &time);
-		OutputStream << L"[" << put_time(&timeinfo, L"%T") << L"] " << cat_name[(int)e.Category] << L" : " << e.Message << endl;
-		OutputStream << L"    on line " << e.Line << L" of file " << e.File << L", function " << e.Function << endl;
+		OutputStream << Records[i];
 		count++;
 	}
 
