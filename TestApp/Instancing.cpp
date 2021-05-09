@@ -113,13 +113,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     LogCheck(D3DCompileFromFile(L"InstancingShaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixel_shader, &error_blob), LogCategory::Error);
     LogErrorBlob(error_blob);
 
-    // Define pipeline state 
-    D3D12_INPUT_LAYOUT_DESC input_layout;
-    input_layout.pInputElementDescs = StandardVertex::sDesc;
-    input_layout.NumElements = _countof(StandardVertex::sDesc);
+    // Load mesh
+    CommandGraph copy_graph(kWorkerCount, QueueType::Copy, &dev);
 
+    Mesh monkey;
+    monkey.BuildFromOBJ(&dev, copy_graph, "monkey.obj");
+    constexpr uint32_t kInstancesCount = 10000;
+
+    // Define pipeline state 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeline_state = {};
-    pipeline_state.InputLayout = input_layout;
+    pipeline_state.InputLayout = monkey.GetDesc().vertex_layout.GetGPUDesc();
     pipeline_state.pRootSignature = root_signature.Get();
     pipeline_state.VS = { reinterpret_cast<UINT8*>(vertex_shader->GetBufferPointer()), vertex_shader->GetBufferSize() };
     pipeline_state.PS = { reinterpret_cast<UINT8*>(pixel_shader->GetBufferPointer()), pixel_shader->GetBufferSize() };
@@ -133,13 +136,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     pipeline_state.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
     pipeline_state.DSVFormat = DXGI_FORMAT_D32_FLOAT;
     pipeline_state.SampleDesc.Count = 1;
-
-    // Load mesh
-    CommandGraph copy_graph(kWorkerCount, QueueType::Copy, &dev);
-
-    Mesh monkey;
-    monkey.BuildFromOBJ(&dev, copy_graph, "monkey.obj");
-    constexpr uint32_t kInstancesCount = 10000;
 
     copy_graph.Build(&dev);
     copy_graph.Execute(&dev);

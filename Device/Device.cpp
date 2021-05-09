@@ -18,13 +18,13 @@ Device::Device(Window* window_ptr, int adapter_index)
 		ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller)));
 		debug_controller->EnableDebugLayer();
 
-		// This causes PIX to crash
-		/*ComPtr<ID3D12DeviceRemovedExtendedDataSettings> dred_settings;
+		// This may cause PIX to crash
+		ComPtr<ID3D12DeviceRemovedExtendedDataSettings> dred_settings;
 		ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&dred_settings)));
 
 		// Turn on auto-breadcrumbs and page fault reporting.
 		dred_settings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-		dred_settings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);*/
+		dred_settings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
 	}
 #endif
 

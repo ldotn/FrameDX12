@@ -7,8 +7,10 @@
 
 using namespace FrameDX12;
 
-void Mesh::BuildFromOBJ(Device* device, CommandGraph& copy_graph, const std::string& path)
+void Mesh::BuildFromOBJ(Device* device, CommandGraph& copy_graph, const std::string& path, VertexDesc&& vertex_desc)
 {
+    mDesc.vertex_layout = vertex_desc;
+
     using namespace std;
 
     tinyobj::attrib_t attrib;
@@ -27,7 +29,7 @@ void Mesh::BuildFromOBJ(Device* device, CommandGraph& copy_graph, const std::str
         return;
 
     // Create CPU-side vertex and index buffers
-    unordered_map<StandardVertex, uint32_t> unique_vertices = {};
+    unordered_map<CPUVertex, uint32_t> unique_vertices = {};
 
     size_t reserve_size = 0;
     for (const auto& shape : shapes)
@@ -39,7 +41,7 @@ void Mesh::BuildFromOBJ(Device* device, CommandGraph& copy_graph, const std::str
     {
         for (const auto& index : shape.mesh.indices)
         {
-            StandardVertex vertex;
+            CPUVertex vertex;
             vertex.position.x = attrib.vertices[3 * index.vertex_index + 0];
             vertex.position.y = attrib.vertices[3 * index.vertex_index + 1];
             vertex.position.z = attrib.vertices[3 * index.vertex_index + 2];
@@ -50,6 +52,9 @@ void Mesh::BuildFromOBJ(Device* device, CommandGraph& copy_graph, const std::str
 
             vertex.uv.x = attrib.texcoords[2 * index.texcoord_index + 0];
             vertex.uv.y = attrib.texcoords[2 * index.texcoord_index + 1];
+
+            vertex.tangent.x = vertex.tangent.y = vertex.tangent.z = vertex.tangent.w = 0;
+            vertex.bitangent.x = vertex.bitangent.y = vertex.bitangent.z = 0;
 
             if (!unique_vertices.count(vertex))
             {
@@ -80,26 +85,38 @@ void Mesh::BuildFromOBJ(Device* device, CommandGraph& copy_graph, const std::str
     }
 
     vector<DirectX::XMFLOAT4> raw_tangents(mVertices.size());
-    DirectX::ComputeTangentFrame(mIndices.data(), mDesc.triangle_count, raw_vertices.data(), raw_normals.data(), raw_uvs.data(), mDesc.vertex_count, raw_tangents.data());
+    vector<DirectX::XMFLOAT3> raw_bitangents(mVertices.size());
+    DirectX::ComputeTangentFrame(mIndices.data(), mDesc.triangle_count, raw_vertices.data(), raw_normals.data(), raw_uvs.data(), mDesc.vertex_count, raw_tangents.data(), raw_bitangents.data());
 
-    for (auto [tangent, vertex] : fpp::zip(raw_tangents, mVertices))
-        vertex.tangent = tangent;
+    for (auto [idx, vertex] : fpp::enumerate(mVertices))
+    {
+        vertex.tangent = raw_tangents[idx];
+        vertex.bitangent = raw_bitangents[idx];
+    }
+
+    // Convert the CPU vertex to the user defined representation
+    size_t buffer_size = mVertices.size() * vertex_desc.vertex_size;
+    void* user_vb = malloc(buffer_size);
+    mUserFormatedVB = user_vb;
+
+    for (const CPUVertex& vertex : mVertices)
+        user_vb = mDesc.vertex_layout.AppendVertex(user_vb, vertex);
 
     // Create GPU-side buffers
     mIndexBuffer.Create(device, CD3DX12_RESOURCE_DESC::Buffer(mIndices.size() * sizeof(uint32_t)));
-    mVertexBuffer.Create(device, CD3DX12_RESOURCE_DESC::Buffer(mVertices.size() * sizeof(StandardVertex)));
+    mVertexBuffer.Create(device, CD3DX12_RESOURCE_DESC::Buffer(buffer_size));
 
-    copy_graph.AddNode("", [&](ID3D12GraphicsCommandList* cl)
+    copy_graph.AddNode("", [this,buffer_size](ID3D12GraphicsCommandList* cl)
     {
         // Need to set it to common when using the copy queue
         // TODO : It would be nice if the command graph could batch resource barriers
         mIndexBuffer.FillFromBuffer(cl, mIndices, D3D12_RESOURCE_STATE_COMMON);
-        mVertexBuffer.FillFromBuffer(cl, mVertices, D3D12_RESOURCE_STATE_COMMON);
+        mVertexBuffer.FillFromBuffer(cl, reinterpret_cast<char*>(mUserFormatedVB), buffer_size, D3D12_RESOURCE_STATE_COMMON);
     }, nullptr, {});
 
     mVBV.BufferLocation = mVertexBuffer->GetGPUVirtualAddress();
-    mVBV.SizeInBytes = mVertices.size() * sizeof(StandardVertex);
-    mVBV.StrideInBytes = sizeof(StandardVertex);
+    mVBV.SizeInBytes = buffer_size;
+    mVBV.StrideInBytes = mDesc.vertex_layout.vertex_size;
 
     mIBV.BufferLocation = mIndexBuffer->GetGPUVirtualAddress();
     mIBV.SizeInBytes = mIndices.size() * sizeof(uint32_t);
@@ -115,4 +132,9 @@ void Mesh::Draw(ID3D12GraphicsCommandList* cl, uint32_t instances_count)
     cl->IASetIndexBuffer(&mIBV);
     cl->IASetVertexBuffers(0, 1, &mVBV);
     cl->DrawIndexedInstanced(mIndices.size(), instances_count, 0, 0, 0);
+}
+
+Mesh::~Mesh()
+{
+    free(mUserFormatedVB);
 }
