@@ -106,12 +106,13 @@ void Mesh::BuildFromOBJ(Device* device, CommandGraph& copy_graph, const std::str
     mIndexBuffer.Create(device, CD3DX12_RESOURCE_DESC::Buffer(mIndices.size() * sizeof(uint32_t)));
     mVertexBuffer.Create(device, CD3DX12_RESOURCE_DESC::Buffer(buffer_size));
 
-    copy_graph.AddNode("", [this,buffer_size](ID3D12GraphicsCommandList* cl)
+    copy_graph.AddNode("", [this,buffer_size, &copy_graph](ID3D12GraphicsCommandList* cl)
     {
         // Need to set it to common when using the copy queue
         // TODO : It would be nice if the command graph could batch resource barriers
-        mIndexBuffer.FillFromBuffer(cl, mIndices, D3D12_RESOURCE_STATE_COMMON);
-        mVertexBuffer.FillFromBuffer(cl, reinterpret_cast<char*>(mUserFormatedVB), buffer_size, D3D12_RESOURCE_STATE_COMMON);
+        auto new_state = copy_graph.GetQueueType() == QueueType::Copy ? D3D12_RESOURCE_STATE_COMMON : D3D12_RESOURCE_STATE_GENERIC_READ;
+        mIndexBuffer.FillFromBuffer(cl, mIndices, new_state);
+        mVertexBuffer.FillFromBuffer(cl, reinterpret_cast<char*>(mUserFormatedVB), buffer_size, new_state);
     }, nullptr, {});
 
     mVBV.BufferLocation = mVertexBuffer->GetGPUVirtualAddress();

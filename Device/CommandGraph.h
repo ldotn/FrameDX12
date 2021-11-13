@@ -96,6 +96,8 @@ Setup --> RenderObjects ----> PostPro --> Present
 		//
 		// Side note: Repeats are executed counting down from the biggest index.
 		uint64_t Execute(Device * device, ID3D12PipelineState* initial_state = nullptr);
+
+		QueueType GetQueueType() const { return mType; }
 	private:
 		QueueType mType;
 

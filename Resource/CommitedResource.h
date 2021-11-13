@@ -53,6 +53,9 @@ namespace FrameDX12
 				}
 			}*/
 
+			/*do a wrapper for the command lists, keep track from that graph they came and more importantly the temp resources associated with it
+				then you know that temp resources can be reused after Close is called*/
+
 			if (!upload_resource)
 			{
 				auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);

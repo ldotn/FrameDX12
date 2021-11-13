@@ -21,12 +21,18 @@
     <ClCompile Include="Instancing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="VertexFormatTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="SimpleShaders.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
     <FxCompile Include="InstancingShaders.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
+    <FxCompile Include="VertexFormatShaders.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
   </ItemGroup>

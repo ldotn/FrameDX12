@@ -7,7 +7,8 @@ namespace FrameDX12
 	class StructuredBuffer : private CommitedResource
 	{
 	public:
-		void Create(Device* device, size_t size, bool needs_uav = false, bool will_be_updated = true, const std::vector<DataT>& initial_data = {}, ID3D12GraphicsCommandList* cl = nullptr)
+		// If initial data is provided, it MUST be valid until the graph nodes are executed (don't need to wait for the gpu to be done though)
+		void Create(Device* device, size_t size, bool needs_uav = false, bool will_be_updated = true, const std::vector<DataT>& initial_data = {}, CommandGraph* copy_graph = nullptr)
 		{
 			mSize = size;
 
@@ -18,7 +19,16 @@ namespace FrameDX12
 
 			if (initial_data.size() > 0)
 			{
-				FillFromBuffer(cl, initial_data.data(), mSize, D3D12_RESOURCE_STATE_GENERIC_READ);
+				if (LogAssertAndContinue(copy_graph != nullptr, LogCategory::Error))
+				{
+					copy_graph->AddNode("", [this, &initial_data, copy_graph](ID3D12GraphicsCommandList* cl)
+					{
+						// Need to set it to common when using the copy queue
+						// TODO : It would be nice if the command graph could batch resource barriers
+						auto new_state = copy_graph->GetQueueType() == QueueType::Copy ? D3D12_RESOURCE_STATE_COMMON : D3D12_RESOURCE_STATE_GENERIC_READ;
+						FillFromBuffer(cl, initial_data, new_state);
+					}, nullptr, {});
+				}
 			}
 
 			D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
