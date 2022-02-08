@@ -91,6 +91,16 @@ namespace FrameDX12
 
 		const CD3DX12_RESOURCE_DESC& GetDesc() const { return mDescription; }
 		ID3D12Resource* operator->() { return mResource.Get(); }
+
+		CommitedResource Duplicate() const
+		{
+			CommitedResource copy;
+			copy.mDevice = mDevice;
+			copy.mStates = mStates;
+			copy.mDescription = mDescription;
+
+			return copy;
+		}
 	protected:
 		static thread_local std::vector<ComPtr<ID3D12Resource>> mTempUploadResources;
 

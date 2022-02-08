@@ -1,4 +1,4 @@
-#if 0
+#if 1
 #define WIN32_LEAN_AND_MEAN // Exclude rarely used stuff from Windows headers
 #define NOMINMAX
 #include <Windows.h>
@@ -111,27 +111,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     LogCheck(D3DCompileFromFile(L"SimpleShaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixel_shader, &error_blob), LogCategory::Error);
     LogErrorBlob(error_blob);
 
-    // Define pipeline state 
-    D3D12_INPUT_LAYOUT_DESC input_layout;
-    input_layout.pInputElementDescs = StandardVertex::sDesc;
-    input_layout.NumElements = _countof(StandardVertex::sDesc);
-
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeline_state = {};
-    pipeline_state.InputLayout = input_layout;
-    pipeline_state.pRootSignature = root_signature.Get();
-    pipeline_state.VS = { reinterpret_cast<UINT8*>(vertex_shader->GetBufferPointer()), vertex_shader->GetBufferSize() };
-    pipeline_state.PS = { reinterpret_cast<UINT8*>(pixel_shader->GetBufferPointer()), pixel_shader->GetBufferSize() };
-    pipeline_state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-    pipeline_state.RasterizerState.FrontCounterClockwise = TRUE;
-    pipeline_state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-    pipeline_state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-    pipeline_state.SampleMask = UINT_MAX;
-    pipeline_state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    pipeline_state.NumRenderTargets = 1;
-    pipeline_state.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-    pipeline_state.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-    pipeline_state.SampleDesc.Count = 1;
-
     // Load mesh
     CommandGraph copy_graph(kWorkerCount, QueueType::Copy, &dev);
 
@@ -150,6 +129,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
     copy_graph.Build(&dev);
     copy_graph.Execute(&dev);
+
+    // Define pipeline state 
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeline_state = {};
+    pipeline_state.InputLayout = monkeys[0]->GetDesc().vertex_layout.GetGPUDesc();
+    pipeline_state.pRootSignature = root_signature.Get();
+    pipeline_state.VS = { reinterpret_cast<UINT8*>(vertex_shader->GetBufferPointer()), vertex_shader->GetBufferSize() };
+    pipeline_state.PS = { reinterpret_cast<UINT8*>(pixel_shader->GetBufferPointer()), pixel_shader->GetBufferSize() };
+    pipeline_state.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    pipeline_state.RasterizerState.FrontCounterClockwise = TRUE;
+    pipeline_state.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    pipeline_state.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+    pipeline_state.SampleMask = UINT_MAX;
+    pipeline_state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    pipeline_state.NumRenderTargets = 1;
+    pipeline_state.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    pipeline_state.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+    pipeline_state.SampleDesc.Count = 1;
+
+
 
     // Create CB
     struct alignas(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT) CBData

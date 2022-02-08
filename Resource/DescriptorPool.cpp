@@ -117,3 +117,9 @@ Descriptor DescriptorPool::GetNextDescriptor()
 
 	return handle;
 }
+
+Descriptor Descriptor::Duplicate() const
+{
+	Descriptor copy = mPool->GetNextDescriptor();
+	mPool->mDevicePtr->GetDevice()->CopyDescriptorsSimple(1, *copy, CD3DX12_CPU_DESCRIPTOR_HANDLE(mPool->mCPUHeapStart, mIndex, mPool->mEntrySize), mPool->
+}

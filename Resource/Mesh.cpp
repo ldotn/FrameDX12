@@ -139,3 +139,16 @@ Mesh::~Mesh()
 {
     free(mUserFormatedVB);
 }
+
+Mesh Mesh::Duplicate(class CommandGraph& copy_graph) const
+{
+    Mesh copy;
+    copy.mDesc = mDesc;
+    copy.mIndices = mIndices;
+    copy.mVertices = mVertices;
+
+    size_t buffer_size = mVertices.size() * mDesc.vertex_layout.vertex_size;
+    copy.mUserFormatedVB = malloc(buffer_size);
+    memcpy(copy.mUserFormatedVB, mUserFormatedVB, buffer_size);
+
+}

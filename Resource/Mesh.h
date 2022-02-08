@@ -109,6 +109,9 @@ namespace FrameDX12
 		void Draw(ID3D12GraphicsCommandList* cl, uint32_t instances_count = 1);
 
 		Description GetDesc() const { return mDesc; }
+
+		// Returns an independent copy of this mesh
+		Mesh Duplicate(class CommandGraph& copy_graph) const;
 	private:
 		std::vector<uint32_t> mIndices;
 		std::vector<CPUVertex> mVertices;

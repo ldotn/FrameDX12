@@ -21,6 +21,8 @@ namespace FrameDX12
 		CD3DX12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptor();
 
 		bool IsValid() const;
+
+		Descriptor Duplicate() const;
 	private:
 		std::atomic_int * mRefCount;
 		DescriptorPool* mPool;
