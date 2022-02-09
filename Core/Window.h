@@ -16,6 +16,8 @@ namespace FrameDX12
 		// There can only be ONE keyboard callback function on the entire program, that's why it's static
 		static std::function<void(WPARAM, KeyAction)> KeyboardCallback;
 		static std::function<void(WPARAM, int, int)> MouseCallback;
+		// Called first on the MessageProc routine, for extra customization. If it returns true the input is considered handled and the message proc returns
+		static std::function<bool(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)> CustomMessageProc;
 
 		// Calls the provided function when there are no messages to process
 		// This is where you would do all your render stuff

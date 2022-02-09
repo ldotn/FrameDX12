@@ -6,6 +6,7 @@ using namespace FrameDX12;
 
 std::function<void(WPARAM, KeyAction)> Window::KeyboardCallback = [](WPARAM, KeyAction) {};
 std::function<void(WPARAM, int, int)> Window::MouseCallback = [](WPARAM, int, int) {};
+std::function<bool(HWND, UINT, WPARAM, LPARAM)> Window::CustomMessageProc = [](HWND, UINT, WPARAM, LPARAM) { return false; };
 
 void FrameDX12::Window::CallDuringIdle(std::function<bool(double)> LoopBody)
 {
@@ -40,6 +41,9 @@ void FrameDX12::Window::CallDuringIdle(std::function<bool(double)> LoopBody)
 
 LRESULT WINAPI Window::InternalMessageProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	if (CustomMessageProc(hWnd, msg, wParam, lParam))
+		return true;
+
 	switch (msg)
 	{
 	case WM_DESTROY:

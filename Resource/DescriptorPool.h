@@ -22,7 +22,7 @@ namespace FrameDX12
 
 		bool IsValid() const;
 
-		Descriptor Duplicate() const;
+		//Descriptor Duplicate() const;
 	private:
 		std::atomic_int * mRefCount;
 		DescriptorPool* mPool;

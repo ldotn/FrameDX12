@@ -140,7 +140,7 @@ Mesh::~Mesh()
     free(mUserFormatedVB);
 }
 
-Mesh Mesh::Duplicate(class CommandGraph& copy_graph) const
+/*Mesh Mesh::Duplicate(class CommandGraph& copy_graph) const
 {
     Mesh copy;
     copy.mDesc = mDesc;
@@ -151,4 +151,4 @@ Mesh Mesh::Duplicate(class CommandGraph& copy_graph) const
     copy.mUserFormatedVB = malloc(buffer_size);
     memcpy(copy.mUserFormatedVB, mUserFormatedVB, buffer_size);
 
-}
+}*/
