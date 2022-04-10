@@ -4,7 +4,8 @@
 
 using namespace FrameDX12;
 
-thread_local std::vector<ComPtr<ID3D12Resource>> CommitedResource::mTempUploadResources;
+std::mutex UploadAllocator::sGlobalLock;
+std::vector<std::shared_ptr<UploadAllocator>> UploadAllocator::sAllocators;
 
 void CommitedResource::Create(	Device* device, 
 								CD3DX12_RESOURCE_DESC description,
@@ -63,4 +64,73 @@ void CommitedResource::Transition(ID3D12GraphicsCommandList* cl, D3D12_RESOURCE_
 		cl->ResourceBarrier(1, transitions);
 		mStates = new_states;
 	}
+}
+
+UploadAllocator::AllocatedRegion UploadAllocator::Allocate(ID3D12GraphicsCommandList* cl, size_t size, bool& success_out)
+{
+	std::scoped_lock(mLock);
+
+	AllocatedRegion ret;
+	ret.BackingResource = mUploadResource.Get();
+
+	if (mFreeSize < size)
+	{
+		success_out = false;
+		return ret;
+	}
+
+	for (auto iter = mFreeRegions.begin(); iter != mFreeRegions.end(); ++iter)
+	{
+		if (iter->End - iter->Start >= size)
+		{
+			ret.Offset = iter->Start;
+			//ret.MappedPtr = mMappedData + ret.Offset;
+
+			mUsedRegions[cl].push_back({ iter->Start, iter->Start + size });
+
+			iter->Start += size;
+			if (iter->Start == iter->End)
+			{
+				mFreeRegions.erase(iter);
+			}
+
+			break;
+		}
+	}
+
+	mFreeSize -= size;
+
+	success_out = true;
+	return ret;
+}
+
+void UploadAllocator::ReleaseRegions(ID3D12GraphicsCommandList* cl)
+{
+	std::scoped_lock(mLock);
+
+	size_t freed_size = 0;
+
+	auto used_entry = mUsedRegions.find(cl);
+	if (used_entry != mUsedRegions.end())
+	{
+		Region current_region = used_entry->second[0];
+		for (int32 idx = 1; idx < used_entry->second.size(); ++idx)
+		{
+			auto [start, end] = used_entry->second[idx];
+			if (current_region.End == start)
+			{
+				current_region.End = end;
+			}
+			else
+			{
+				mFreeRegions.push_back(current_region);
+				current_region = { start, end };
+			}
+		}
+		
+		mFreeRegions.push_back(current_region);
+		mUsedRegions.erase(used_entry);
+	}
+
+	mFreeSize += freed_size;
 }

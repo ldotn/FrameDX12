@@ -1,6 +1,7 @@
 #include "CommandGraph.h"
 #include "Device.h"
 #include "../Core/Log.h"
+#include "../Resource/CommitedResource.h"
 
 using namespace FrameDX12;
 
@@ -257,6 +258,8 @@ uint64_t CommandGraph::Execute(Device* device, ID3D12PipelineState* initial_stat
 		// You add A to cl0, B to cl1, then C to cl0
 		// If you try to execute cl0 and cl1 at the same time, you aren't respecting dependencies
 		queue->ExecuteCommandLists(mCommandLists.size(), mRawCommandLists);
+
+		for (auto cl : mCommandLists) UploadAllocator::ReleaseRegionsOnAllAllocators(cl.Get());
 
 		mWorkQueueSize = 0;
 		for (Node* node : mNextWorkQueue)

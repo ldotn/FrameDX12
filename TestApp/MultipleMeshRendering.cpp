@@ -114,9 +114,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     // Load mesh
     CommandGraph copy_graph(kWorkerCount, QueueType::Copy, &dev);
 
+    int draw_count = 60000;
+
 #ifdef NDEBUG 
     // TODO : Add a Duplicate function on the mesh
-    vector<unique_ptr<Mesh>> monkeys(80);
+    vector<unique_ptr<Mesh>> monkeys(3);
 #else
     // Model loading takes a good time on debug
     vector<unique_ptr<Mesh>> monkeys(3);
@@ -124,7 +126,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     for (auto& m : monkeys)
     {
         m = make_unique<Mesh>();
-        m->BuildFromOBJ(&dev, copy_graph, "monkey.obj");
+        m->BuildFromOBJ(&dev, copy_graph, "monkey_lowpoly.obj");
     }
 
     copy_graph.Build(&dev);
@@ -156,7 +158,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
         XMFLOAT4X4 WVP;
     };
     ConstantBuffer<CBData> cb;
-    cb.Create(&dev, monkeys.size());
+    cb.Create(&dev, draw_count);
 
     // -------------------------------
     //      Render setup
@@ -193,12 +195,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     },
     [&](ID3D12GraphicsCommandList* cl, uint32_t idx)
     {
-        idx %= monkeys.size();
-
         cl->SetGraphicsRootDescriptorTable(0, cb.GetView(idx).GetGPUDescriptor());
 
-        monkeys[idx]->Draw(cl);
-    }, { "Clear" }, monkeys.size());
+        monkeys[idx % monkeys.size()]->Draw(cl);
+    }, { "Clear" }, draw_count);//monkeys.size());
 
     commands.AddNode("Present", [&](ID3D12GraphicsCommandList* cl)
     {
@@ -240,7 +240,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
         static float game_seconds = 0;
         game_seconds += delta_seconds;
 
-        for (int idx = 0; idx < monkeys.size(); idx++)
+        for (int idx = 0; idx < draw_count; idx++)
         {
             CBData data;
             auto wvp = XMMatrixScaling(0.75, 0.75, 0.75);
