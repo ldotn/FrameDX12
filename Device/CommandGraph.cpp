@@ -190,6 +190,10 @@ void CommandGraph::Build(Device* device)
 		mNodes[node_idx].name = name;
 		mNodes[node_idx].num_dependencies = tmp_node.dependencies.size();
 
+		MutableNodeInfo info;
+		info.repeats = &mNodes[node_idx].repeats;
+		mNodeInfo[name] = info;
+
 		++node_idx;
 	}
 
@@ -287,4 +291,15 @@ CommandGraph::~CommandGraph()
 
 	for (HANDLE event : mStartWorkEvents) CloseHandle(event);
 	for (HANDLE event : mWorkerFinishedEvents) CloseHandle(event);
+}
+
+CommandGraph::MutableNodeInfo CommandGraph::operator[](const std::string& name)
+{
+	auto entry = mNodeInfo.find(name);
+	if (entry != mNodeInfo.end())
+	{
+		return entry->second;
+	}
+
+	return MutableNodeInfo{};
 }

@@ -114,8 +114,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     // Load mesh
     CommandGraph copy_graph(kWorkerCount, QueueType::Copy, &dev);
 
-    int draw_count = 60000;
-
 #ifdef NDEBUG 
     // TODO : Add a Duplicate function on the mesh
     vector<unique_ptr<Mesh>> monkeys(3);
@@ -158,7 +156,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
         XMFLOAT4X4 WVP;
     };
     ConstantBuffer<CBData> cb;
-    cb.Create(&dev, draw_count);
+    int32 max_draw_count = 60000;
+    cb.Create(&dev, max_draw_count);
 
     // -------------------------------
     //      Render setup
@@ -198,7 +197,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
         cl->SetGraphicsRootDescriptorTable(0, cb.GetView(idx).GetGPUDescriptor());
 
         monkeys[idx % monkeys.size()]->Draw(cl);
-    }, { "Clear" }, draw_count);//monkeys.size());
+    }, { "Clear" }, 1);//monkeys.size());
 
     commands.AddNode("Present", [&](ID3D12GraphicsCommandList* cl)
     {
@@ -239,6 +238,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
         float delta_seconds = elapsed_time / 1000.0f;
         static float game_seconds = 0;
         game_seconds += delta_seconds;
+
+        int draw_count = max(1u, uint32(1000*game_seconds) % max_draw_count);
+        *(commands["Draw"].repeats) = draw_count;
 
         for (int idx = 0; idx < draw_count; idx++)
         {
