@@ -50,14 +50,14 @@ namespace FrameDX12
 		
 		static void ReleaseRegionsOnAllAllocators(ID3D12GraphicsCommandList* cl)
 		{
-			std::scoped_lock(sGlobalLock);
+			std::scoped_lock lock(sGlobalLock);
 
 			for (auto allocator : sAllocators) allocator->ReleaseRegions(cl);
 		}
 		static std::shared_ptr<UploadAllocator> CreateNewAllocator(Device* device, size_t size, bool use_mutex = true)
 		{
 			// Needed most of the time, but not when called from GetOrCreateAllocator
-			if(use_mutex) std::scoped_lock(sGlobalLock);
+			if(use_mutex) std::scoped_lock lock(sGlobalLock);
 
 			std::shared_ptr<UploadAllocator> allocator(new UploadAllocator(device, size));
 			sAllocators.push_back(allocator);
@@ -66,7 +66,7 @@ namespace FrameDX12
 		}
 		static std::shared_ptr<UploadAllocator> GetOrCreateAllocator(Device* device, size_t required_size)
 		{
-			std::scoped_lock(sGlobalLock);
+			std::scoped_lock lock(sGlobalLock);
 
 			size_t max_size = required_size;
 			for (auto allocator : sAllocators)

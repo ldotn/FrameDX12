@@ -136,7 +136,7 @@ CommandGraph::CommandGraph(size_t num_workers, QueueType type, Device* device_pt
 							int ready_dependencies = dependent_node->num_ready_dependencies.fetch_add(1) + 1;
 							if (ready_dependencies == dependent_node->num_dependencies)
 							{
-								std::scoped_lock(mLock);
+								std::scoped_lock lock(mLock);
 								mNextWorkQueue.push_back(dependent_node);
 							}
 						}

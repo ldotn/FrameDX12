@@ -68,7 +68,7 @@ void CommitedResource::Transition(ID3D12GraphicsCommandList* cl, D3D12_RESOURCE_
 
 UploadAllocator::AllocatedRegion UploadAllocator::Allocate(ID3D12GraphicsCommandList* cl, size_t size, bool& success_out)
 {
-	std::scoped_lock(mLock);
+	std::scoped_lock lock(mLock);
 
 	AllocatedRegion ret;
 	ret.BackingResource = mUploadResource.Get();
@@ -106,7 +106,7 @@ UploadAllocator::AllocatedRegion UploadAllocator::Allocate(ID3D12GraphicsCommand
 
 void UploadAllocator::ReleaseRegions(ID3D12GraphicsCommandList* cl)
 {
-	std::scoped_lock(mLock);
+	std::scoped_lock lock(mLock);
 
 	size_t freed_size = 0;
 

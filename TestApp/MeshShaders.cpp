@@ -1,4 +1,4 @@
-#if 0
+#if 1
 #define WIN32_LEAN_AND_MEAN // Exclude rarely used stuff from Windows headers
 #define NOMINMAX
 #include <Windows.h>
@@ -21,7 +21,7 @@ using namespace std;
 using namespace fpp;
 using namespace DirectX;
 
-constexpr int kWorkerCount = 4;
+constexpr int kWorkerCount = 8;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, int showCmd)
 {
@@ -97,9 +97,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     }
 
     // Load shaders
-    ComPtr<ID3DBlob> vertex_shader;
-    ComPtr<ID3DBlob> pixel_shader;
-
 #ifdef _DEBUG
     // Enable better shader debugging with the graphics debugging tools.
     UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
@@ -109,10 +106,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
     // TODO : Handle failure
     ComPtr<ID3DBlob> error_blob;
-    LogCheck(D3DCompileFromFile(L"SimpleShaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertex_shader, &error_blob), LogCategory::Error);
+    ComPtr<ID3DBlob> mesh_shader;
+    LogCheck(D3DCompileFromFile(L"MeshShaderPipeline.hlsl", nullptr, nullptr, "MSMain", "ms_6_0", compileFlags, 0, &mesh_shader, &error_blob), LogCategory::Error);
     LogErrorBlob(error_blob);
 
-    LogCheck(D3DCompileFromFile(L"SimpleShaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixel_shader, &error_blob), LogCategory::Error);
+    ComPtr<ID3DBlob> pixel_shader;
+    LogCheck(D3DCompileFromFile(L"MeshShaderPipeline.hlsl", nullptr, nullptr, "PSMain", "ps_6_0", compileFlags, 0, &pixel_shader, &error_blob), LogCategory::Error);
     LogErrorBlob(error_blob);
 
     // Load mesh
@@ -151,6 +150,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
     pipeline_state.DSVFormat = DXGI_FORMAT_D32_FLOAT;
     pipeline_state.SampleDesc.Count = 1;
 
+    struct PSO_STREAM
+    {
+        CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE pRootSignature;
+        CD3DX12_PIPELINE_STATE_STREAM_MS MS;
+        ...
+            CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC SampleDesc;
+    } Stream;
+
+    Stream.AS = GetASBytecode();
+    Stream.MS = GetMSBytecode();
+    ...
+
+        D3D12_PIPELINE_STATE_STREAM_DESC streamDesc = {};
+    streamDesc.pPipelineStateSubobjectStream = &Stream;
+    streamDesc.SizeInBytes = sizeof(Stream);
 
 
     // Create CB
@@ -196,7 +210,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
         ID3D12DescriptorHeap* desc_vec[] = { dev.GetDescriptorPool(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).GetHeap() };
         cl->SetDescriptorHeaps(1, desc_vec);
     },
-    [&](ID3D12GraphicsCommandList* cl, uint32_t idx)
+        [&](ID3D12GraphicsCommandList* cl, uint32_t idx)
     {
         cl->SetGraphicsRootDescriptorTable(0, cb.GetView(idx).GetGPUDescriptor());
 
@@ -285,4 +299,5 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance, PSTR cmdLine, in
 
     return 0;
 }
+
 #endif // 1

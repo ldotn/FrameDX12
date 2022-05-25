@@ -1,39 +1,57 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
+    <Filter Include="Basic Tests">
+      <UniqueIdentifier>{ad177d27-0da4-499f-a043-5df02ce99fe1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Basic Tests\Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Basic Tests\Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Mesh Shaders">
+      <UniqueIdentifier>{ea2b9677-1baa-4e86-8651-c89e211a243d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Mesh Shaders\Resources">
+      <UniqueIdentifier>{9694461b-ff36-48d4-b691-275aedf1a819}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Mesh Shaders\Sources">
+      <UniqueIdentifier>{337072b1-f772-4fb2-ad60-5d50116b4e0b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MultipleMeshRendering.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="FrameExtrapolation.cpp">
+      <Filter>Basic Tests\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Instancing.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Basic Tests\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MultipleMeshRendering.cpp">
+      <Filter>Basic Tests\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VertexFormatTests.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Basic Tests\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshShaders.cpp">
+      <Filter>Mesh Shaders\Sources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="SimpleShaders.hlsl">
-      <Filter>Resource Files</Filter>
-    </FxCompile>
     <FxCompile Include="InstancingShaders.hlsl">
-      <Filter>Resource Files</Filter>
+      <Filter>Basic Tests\Resource Files</Filter>
+    </FxCompile>
+    <FxCompile Include="SimpleShaders.hlsl">
+      <Filter>Basic Tests\Resource Files</Filter>
     </FxCompile>
     <FxCompile Include="VertexFormatShaders.hlsl">
-      <Filter>Resource Files</Filter>
+      <Filter>Basic Tests\Resource Files</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

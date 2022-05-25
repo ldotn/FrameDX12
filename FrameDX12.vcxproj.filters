@@ -11,6 +11,9 @@
     <Filter Include="Resource">
       <UniqueIdentifier>{96201013-06d1-47f4-a675-ca338676d436}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Gameplay">
+      <UniqueIdentifier>{fb697b4d-d15c-4494-a247-a3223d67935a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\stdafx.h">
@@ -104,6 +107,9 @@
     </ClCompile>
     <ClCompile Include="Resource\DescriptorPool.cpp">
       <Filter>Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.ixx">
+      <Filter>Gameplay</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

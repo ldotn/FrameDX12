@@ -164,7 +164,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="FrameExtrapolation.cpp" />
     <ClCompile Include="Instancing.cpp" />
+    <ClCompile Include="MeshShaders.cpp" />
     <ClCompile Include="MultipleMeshRendering.cpp" />
     <ClCompile Include="VertexFormatTests.cpp" />
   </ItemGroup>
@@ -194,6 +196,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FrameDX12.vcxproj">
+      <Project>{c633e49b-fd5a-4584-9d5f-53c5071c75ba}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
