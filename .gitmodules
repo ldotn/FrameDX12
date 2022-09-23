@@ -4,3 +4,6 @@
 [submodule "tinyobjloader"]
 	path = tinyobjloader
 	url = https://github.com/tinyobjloader/tinyobjloader.git
+[submodule "DirectX-Headers"]
+	path = DirectX-Headers
+	url = https://github.com/microsoft/DirectX-Headers.git
