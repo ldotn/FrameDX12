@@ -19,9 +19,6 @@
     <ClInclude Include="Core\stdafx.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Core\d3dx12.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Log.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -70,6 +67,9 @@
     <ClInclude Include="Resource\StructuredBuffer.h">
       <Filter>Resource</Filter>
     </ClInclude>
+    <ClInclude Include="Core\ShaderCompiler.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Log.cpp">
@@ -110,6 +110,9 @@
     </ClCompile>
     <ClCompile Include="Camera.ixx">
       <Filter>Gameplay</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\ShaderCompiler.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

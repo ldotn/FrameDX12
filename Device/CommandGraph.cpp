@@ -86,11 +86,22 @@ CommandGraph::CommandGraph(size_t num_workers, QueueType type, Device* device_pt
 			(*alloc).Get(), // Associated command allocator
 			nullptr, // TODO : Do something with this!
 			IID_PPV_ARGS(cl.GetAddressOf())), LogCategory::Error);
+		/*
+#if defined(DEBUG) || defined(_DEBUG) 
+		ComPtr<ID3D12DebugCommandList1> debug_cl;
+		if (cl->QueryInterface(IID_PPV_ARGS(&debug_cl)) == S_OK)
+		{
+			D3D12_DEBUG_COMMAND_LIST_GPU_BASED_VALIDATION_SETTINGS settings;
+			settings.ShaderPatchMode = D3D12_GPU_BASED_VALIDATION_SHADER_PATCH_MODE_GUARDED_VALIDATION;
+			debug_cl->SetDebugParameter(D3D12_DEBUG_COMMAND_LIST_PARAMETER_GPU_BASED_VALIDATION_SETTINGS, &settings, sizeof(settings));
+		}
+#endif
+		*/
 		cl->Close();
 		mRawCommandLists[worker_id] = cl.Get();
 
-		mWorkerFinishedEvents[worker_id] = CreateEvent(NULL, FALSE, FALSE, NULL);
-		mStartWorkEvents[worker_id] = CreateEvent(NULL, FALSE, FALSE, NULL);
+		mWorkerFinishedEvents[worker_id] = CreateEvent(NULL, FALSE, FALSE, nullptr);
+		mStartWorkEvents[worker_id] = CreateEvent(NULL, FALSE, FALSE, nullptr);
 
 		mWorkers.emplace_back([this, worker_id]()
 		{

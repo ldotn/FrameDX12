@@ -107,6 +107,9 @@ namespace FrameDX12
 		// It will also wait for all prior work
 		void WaitForWork(QueueType queue, uint64_t id);
 
+		// Returns the last finished work id for the queue
+		uint64_t GetLastCompletedWork(QueueType queue);
+
 		// Waits for the queue to finish
 		void WaitForQueue(QueueType queue);
 
@@ -117,6 +120,7 @@ namespace FrameDX12
 		}
 
 		ID3D12PipelineState* GetPSO(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc) { return mPSOPool.GetPSO(desc); }
+		ID3D12PipelineState* GetPSO(const D3D12_PIPELINE_STATE_STREAM_DESC& desc) { return mPSOPool.GetPSO(desc); }
 	private:
 		int QueueTypeToIndex(QueueType type) const
 		{
@@ -140,7 +144,7 @@ namespace FrameDX12
 		struct
 		{
 			ComPtr<ID3D12Fence> fence;
-			uint64_t last_work_id;
+			uint64_t next_work_id;
 			HANDLE sync_event;
 		} mFences[3];
 

@@ -70,6 +70,9 @@ UploadAllocator::AllocatedRegion UploadAllocator::Allocate(ID3D12GraphicsCommand
 {
 	std::scoped_lock lock(mLock);
 
+	// Round (up) the size to a multiple of 512 so offsets are all 512-byte aligned, as required by textures
+	size = (size % 512) == 0 ? size : (size / 512 + 1) * 512;
+
 	AllocatedRegion ret;
 	ret.BackingResource = mUploadResource.Get();
 
@@ -84,7 +87,6 @@ UploadAllocator::AllocatedRegion UploadAllocator::Allocate(ID3D12GraphicsCommand
 		if (iter->End - iter->Start >= size)
 		{
 			ret.Offset = iter->Start;
-			//ret.MappedPtr = mMappedData + ret.Offset;
 
 			mUsedRegions[cl].push_back({ iter->Start, iter->Start + size });
 

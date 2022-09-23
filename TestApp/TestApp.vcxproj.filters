@@ -53,6 +53,9 @@
     <FxCompile Include="VertexFormatShaders.hlsl">
       <Filter>Basic Tests\Resource Files</Filter>
     </FxCompile>
+    <FxCompile Include="MeshletRendering.hlsl">
+      <Filter>Mesh Shaders\Resources</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

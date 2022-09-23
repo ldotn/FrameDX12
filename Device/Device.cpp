@@ -10,13 +10,15 @@ Device::Device(Window* window_ptr, int adapter_index)
 	: mPSOPool(this)
 {
 	using namespace std;
-
+	
 #if defined(DEBUG) || defined(_DEBUG) 
 	// Enable the D3D12 debug layer.
 	{
-		ComPtr<ID3D12Debug> debug_controller;
+		ComPtr<ID3D12Debug1> debug_controller;
 		ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller)));
 		debug_controller->EnableDebugLayer();
+		//debug_controller->SetEnableGPUBasedValidation(true);
+		//debug_controller->SetEnableSynchronizedCommandQueueValidation(true);
 
 		// This may cause PIX to crash
 		ComPtr<ID3D12DeviceRemovedExtendedDataSettings> dred_settings;
@@ -27,7 +29,7 @@ Device::Device(Window* window_ptr, int adapter_index)
 		dred_settings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
 	}
 #endif
-
+	
 	// Find the graphics adapter
 	IDXGIAdapter* adapter = nullptr;
 	IDXGIFactory* factory = nullptr;
@@ -83,7 +85,19 @@ Device::Device(Window* window_ptr, int adapter_index)
 		level = D3D_FEATURE_LEVEL_12_0;
 		ThrowIfFailed(D3D12CreateDevice(adapter, level, IID_PPV_ARGS(&mD3DDevice)));
 	}
-
+	/*
+#if defined(DEBUG) || defined(_DEBUG) 
+	ID3D12DebugDevice2* debug_dev;
+	if (mD3DDevice->QueryInterface(IID_PPV_ARGS(&debug_dev)) == S_OK)
+	{
+		D3D12_DEBUG_DEVICE_GPU_BASED_VALIDATION_SETTINGS settings;
+		settings.MaxMessagesPerCommandList = 256; // default
+		settings.DefaultShaderPatchMode = D3D12_GPU_BASED_VALIDATION_SHADER_PATCH_MODE_GUARDED_VALIDATION;
+		settings.PipelineStateCreateFlags = D3D12_GPU_BASED_VALIDATION_PIPELINE_STATE_CREATE_FLAG_NONE; // default
+		debug_dev->SetDebugParameter(D3D12_DEBUG_DEVICE_PARAMETER_GPU_BASED_VALIDATION_SETTINGS, &settings, sizeof(settings));
+	}
+#endif
+	*/
 	// Check if the device can be casted to anything higher than 11.0
 	ID3D12Device* new_device;
 	mDeviceVersion = 0;
@@ -128,11 +142,11 @@ Device::Device(Window* window_ptr, int adapter_index)
 	ThrowIfFailed(mD3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCopyQueue)));
 
 	// Create fences
-	for (auto& [fence, last_work_id, sync_event] : mFences)
+	for (auto& [fence, next_work_id, sync_event] : mFences)
 	{
-		last_work_id = 0;
-		ThrowIfFailed(mD3DDevice->CreateFence(last_work_id, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
-		sync_event = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
+		ThrowIfFailed(mD3DDevice->CreateFence(next_work_id, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+		next_work_id = 1;
+		sync_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	}
 
 	// Describe and create the swap chain.
@@ -192,17 +206,18 @@ Device::Device(Window* window_ptr, int adapter_index)
 uint64_t Device::SignalQueueWork(QueueType queue)
 {
 	auto& fence = mFences[QueueTypeToIndex(queue)];
-	++fence.last_work_id;
-	ThrowIfFailed(GetQueue(queue)->Signal(fence.fence.Get(), fence.last_work_id));
-	return fence.last_work_id;
+	ThrowIfFailed(GetQueue(queue)->Signal(fence.fence.Get(), fence.next_work_id));
+	return fence.next_work_id++;
 }
 
 void Device::WaitForQueue(QueueType queue)
 {
 	auto& fence = mFences[QueueTypeToIndex(queue)];
-	if (fence.fence->GetCompletedValue() < fence.last_work_id)
+	//OutputDebugStringW((std::to_wstring(fence.next_work_id-1) + L"/" + std::to_wstring(fence.fence->GetCompletedValue()) + L"\n").c_str());
+
+	if (fence.fence->GetCompletedValue() < fence.next_work_id - 1)
 	{
-		ThrowIfFailed(fence.fence->SetEventOnCompletion(fence.last_work_id, fence.sync_event));
+		ThrowIfFailed(fence.fence->SetEventOnCompletion(fence.next_work_id-1, fence.sync_event));
 		WaitForSingleObject(fence.sync_event, INFINITE);
 	}
 }
@@ -210,9 +225,16 @@ void Device::WaitForQueue(QueueType queue)
 void Device::WaitForWork(QueueType queue, uint64_t id)
 {
 	auto& fence = mFences[QueueTypeToIndex(queue)];
+	//OutputDebugStringW((std::to_wstring(id) + L"/" + std::to_wstring(fence.fence->GetCompletedValue()) + L"\n").c_str());
+
 	if (fence.fence->GetCompletedValue() < id)
 	{
 		ThrowIfFailed(fence.fence->SetEventOnCompletion(id, fence.sync_event));
 		WaitForSingleObject(fence.sync_event, INFINITE);
 	}
+}
+
+uint64_t Device::GetLastCompletedWork(QueueType queue)
+{
+	return mFences[QueueTypeToIndex(queue)].fence->GetCompletedValue();
 }

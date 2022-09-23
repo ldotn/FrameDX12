@@ -155,7 +155,8 @@ namespace FrameDX12
 		template<typename T>
 		void FillFromBuffer(ID3D12GraphicsCommandList* cl, T* buffer, size_t buffer_size, D3D12_RESOURCE_STATES new_states)
 		{
-			Transition(cl, D3D12_RESOURCE_STATE_COPY_DEST);
+			//Transition(cl, D3D12_RESOURCE_STATE_COPY_DEST);
+			//Transition(cl, D3D12_RESOURCE_STATE_COMMON);
 
 			D3D12_SUBRESOURCE_DATA data_desc = {};
 			data_desc.pData = buffer;

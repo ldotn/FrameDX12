@@ -121,4 +121,26 @@ namespace FrameDX12
 
 		return output;
 	}
+
+	template<typename T>
+	size_t HashBytes(T obj)
+	{
+		uint8_t* bytes = (uint8_t*)&obj;
+
+		// TODO : Evaluate better hash methods
+		size_t hash_val = 42;
+		for (size_t i = 0; i < sizeof(T); i++)
+		{
+			static_assert(sizeof(size_t) * 8 >= 53);
+			hash_val ^= std::hash<uint8_t>()(bytes[i]) << (i % 53);
+		}
+
+		return hash_val;
+	}
+
+	template <typename T, typename U>
+	T CeilDiv(T a, U b)
+	{
+		return (a + b - 1) / b;
+	}
 }

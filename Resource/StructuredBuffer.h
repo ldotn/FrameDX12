@@ -4,16 +4,17 @@
 namespace FrameDX12
 {
 	template<typename DataT>
-	class StructuredBuffer : private CommitedResource
+	class StructuredBuffer : public CommitedResource
 	{
 	public:
 		// If initial data is provided, it MUST be valid until the graph nodes are executed (don't need to wait for the gpu to be done though)
 		void Create(Device* device, size_t size, bool needs_uav = false, bool will_be_updated = true, const std::vector<DataT>& initial_data = {}, CommandGraph* copy_graph = nullptr)
 		{
 			mSize = size;
+			bool is_copy_queue = (copy_graph && copy_graph->GetQueueType() == QueueType::Copy);
 
 			D3D12_RESOURCE_FLAGS flags = needs_uav ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
-			D3D12_RESOURCE_STATES initial_state = initial_data.size() > 0 ? D3D12_RESOURCE_STATE_COPY_DEST : D3D12_RESOURCE_STATE_GENERIC_READ;
+			D3D12_RESOURCE_STATES initial_state = is_copy_queue ? D3D12_RESOURCE_STATE_COMMON : (initial_data.size() > 0 ? D3D12_RESOURCE_STATE_COPY_DEST : D3D12_RESOURCE_STATE_GENERIC_READ);
 			D3D12_HEAP_TYPE heap_type = will_be_updated ? D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE_DEFAULT;
 			CommitedResource::Create(device, CD3DX12_RESOURCE_DESC::Buffer(sizeof(DataT) * mSize, flags), initial_state, nullptr, heap_type);
 
@@ -21,11 +22,11 @@ namespace FrameDX12
 			{
 				if (LogAssertAndContinue(copy_graph != nullptr, LogCategory::Error))
 				{
-					copy_graph->AddNode("", [this, &initial_data, copy_graph](ID3D12GraphicsCommandList* cl)
+					copy_graph->AddNode("", [this, &initial_data, copy_graph, is_copy_queue](ID3D12GraphicsCommandList* cl)
 					{
 						// Need to set it to common when using the copy queue
 						// TODO : It would be nice if the command graph could batch resource barriers
-						auto new_state = copy_graph->GetQueueType() == QueueType::Copy ? D3D12_RESOURCE_STATE_COMMON : D3D12_RESOURCE_STATE_GENERIC_READ;
+						auto new_state = is_copy_queue ? D3D12_RESOURCE_STATE_COMMON : D3D12_RESOURCE_STATE_GENERIC_READ;
 						FillFromBuffer(cl, initial_data, new_state);
 					}, nullptr, {});
 				}

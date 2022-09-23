@@ -13,6 +13,8 @@ namespace FrameDX12
 		DirectX::XMFLOAT3 bitangent;
 		DirectX::XMFLOAT2 uv;
 
+		uint32 _padding0;
+
 		bool operator==(const CPUVertex& other) const
 		{
 			using namespace DirectX;
@@ -109,6 +111,9 @@ namespace FrameDX12
 		void Draw(ID3D12GraphicsCommandList* cl, uint32_t instances_count = 1);
 
 		Description GetDesc() const { return mDesc; }
+
+		const std::vector<uint32_t>& GetIndices() const { return mIndices; }
+		const std::vector<CPUVertex>& GetVertices() const { return mVertices; }
 
 		// Returns an independent copy of this mesh
 		//Mesh Duplicate(class CommandGraph& copy_graph) const;

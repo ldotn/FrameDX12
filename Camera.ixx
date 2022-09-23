@@ -18,7 +18,7 @@ namespace FrameDX12
 
 			mWindowHandle = window.GetHandle();
 			mUp = XMVectorSet(0, 1, 0, 0);
-			mSpeed = 0.5;
+			mSpeed = 0.1;
 			mMouseSensitivity = 0.1;
 			mInvertVertical = true;
 		}
@@ -67,16 +67,22 @@ namespace FrameDX12
 			RECT screen_rect;
 			GetClientRect(mWindowHandle, &screen_rect);
 
-			POINT mouse_pos;
-			GetCursorPos(&mouse_pos);
+			if (!(GetKeyState(VK_CONTROL) & 0x8000))
+			{
+				POINT mouse_pos;
+				GetCursorPos(&mouse_pos);
 
-			mYaw += ((float)(mouse_pos.x - screen_rect.right / 2)) * DeltaT * mMouseSensitivity;
-			mPitch += ((float)(mouse_pos.y - screen_rect.bottom / 2)) * DeltaT * mMouseSensitivity;
-			
+				mYaw += ((float)(mouse_pos.x - screen_rect.right / 2)) * DeltaT * mMouseSensitivity;
+				mPitch += ((float)(mouse_pos.y - screen_rect.bottom / 2)) * DeltaT * mMouseSensitivity;
+			}
+
 			mDirection = XMVector3Transform(XMVectorSet(0,0,1,0), 
 				XMMatrixRotationRollPitchYaw(mInvertVertical ? -mPitch : mPitch, -mYaw, 0));
 
-			SetCursorPos(screen_rect.right / 2, screen_rect.bottom / 2);
+			if (!(GetKeyState(VK_CONTROL) & 0x8000))
+			{
+				SetCursorPos(screen_rect.right / 2, screen_rect.bottom / 2);
+			}
 		}
 
 		// TODO : Add interpolation for when the renderer goes faster than the game thread

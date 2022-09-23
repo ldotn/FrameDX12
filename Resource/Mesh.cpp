@@ -50,8 +50,8 @@ void Mesh::BuildFromOBJ(Device* device, CommandGraph& copy_graph, const std::str
             vertex.normal.y = attrib.normals[3 * index.normal_index + 1];
             vertex.normal.z = attrib.normals[3 * index.normal_index + 2];
 
-            vertex.uv.x = attrib.texcoords[2 * index.texcoord_index + 0];
-            vertex.uv.y = attrib.texcoords[2 * index.texcoord_index + 1];
+            vertex.uv.x = 0;//attrib.texcoords[2 * index.texcoord_index + 0];
+            vertex.uv.y = 0; //attrib.texcoords[2 * index.texcoord_index + 1];
 
             vertex.tangent.x = vertex.tangent.y = vertex.tangent.z = vertex.tangent.w = 0;
             vertex.bitangent.x = vertex.bitangent.y = vertex.bitangent.z = 0;
@@ -70,7 +70,7 @@ void Mesh::BuildFromOBJ(Device* device, CommandGraph& copy_graph, const std::str
     mDesc.vertex_count = mVertices.size();
     mDesc.triangle_count = mDesc.index_count / 3;
 
-    // Using DirectXMesh to create the tangents
+    // Using DirectXMesh to create the tangents and do cleanup
     // Need to unpack the struct for the dx tangent frame computation
     // TODO : Find a way to avoid this duplications
     vector<DirectX::XMFLOAT3> raw_vertices(mVertices.size());
@@ -86,6 +86,7 @@ void Mesh::BuildFromOBJ(Device* device, CommandGraph& copy_graph, const std::str
 
     vector<DirectX::XMFLOAT4> raw_tangents(mVertices.size());
     vector<DirectX::XMFLOAT3> raw_bitangents(mVertices.size());
+
     DirectX::ComputeTangentFrame(mIndices.data(), mDesc.triangle_count, raw_vertices.data(), raw_normals.data(), raw_uvs.data(), mDesc.vertex_count, raw_tangents.data(), raw_bitangents.data());
 
     for (auto [idx, vertex] : fpp::enumerate(mVertices))
@@ -103,8 +104,9 @@ void Mesh::BuildFromOBJ(Device* device, CommandGraph& copy_graph, const std::str
         user_vb = mDesc.vertex_layout.AppendVertex(user_vb, vertex);
 
     // Create GPU-side buffers
-    mIndexBuffer.Create(device, CD3DX12_RESOURCE_DESC::Buffer(mIndices.size() * sizeof(uint32_t)));
-    mVertexBuffer.Create(device, CD3DX12_RESOURCE_DESC::Buffer(buffer_size));
+    D3D12_RESOURCE_STATES initial_state = copy_graph.GetQueueType() == QueueType::Copy ? D3D12_RESOURCE_STATE_COMMON : D3D12_RESOURCE_STATE_COPY_DEST;
+    mIndexBuffer.Create(device, CD3DX12_RESOURCE_DESC::Buffer(mIndices.size() * sizeof(uint32_t)), initial_state);
+    mVertexBuffer.Create(device, CD3DX12_RESOURCE_DESC::Buffer(buffer_size), initial_state);
 
     copy_graph.AddNode("", [this,buffer_size, &copy_graph](ID3D12GraphicsCommandList* cl)
     {

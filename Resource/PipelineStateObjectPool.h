@@ -1,11 +1,24 @@
 #pragma once
 #include "../Core/stdafx.h"
+#include <variant>
+#include "../Core/Utils.h"
 
-inline bool operator==(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& lhs, const D3D12_GRAPHICS_PIPELINE_STATE_DESC& rhs)
+typedef std::variant<D3D12_GRAPHICS_PIPELINE_STATE_DESC, D3D12_PIPELINE_STATE_STREAM_DESC> D3D12_PSO_DESC_TYPES;
+
+inline bool operator==(const D3D12_PSO_DESC_TYPES& lhs, const D3D12_PSO_DESC_TYPES& rhs)
 {
-    return memcmp(&lhs, &rhs, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC)) == 0;
+    bool equal = false;
+    if (lhs.index() == rhs.index())
+    {
+        if(lhs.index() == 0)
+            equal = memcmp(&std::get<0>(lhs), &std::get<0>(rhs), sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC)) == 0;
+        else
+            equal = memcmp(&std::get<1>(lhs), &std::get<1>(rhs), sizeof(D3D12_PIPELINE_STATE_STREAM_DESC)) == 0;
+    }
+    
+    return equal;
 }
-inline bool operator!=(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& lhs, const D3D12_GRAPHICS_PIPELINE_STATE_DESC& rhs)
+inline bool operator!=(const D3D12_PSO_DESC_TYPES& lhs, const D3D12_PSO_DESC_TYPES& rhs)
 {
     return !(lhs == rhs);
 }
@@ -13,21 +26,14 @@ inline bool operator!=(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& lhs, const D3D1
 namespace std
 {
     template <>
-    struct hash<D3D12_GRAPHICS_PIPELINE_STATE_DESC>
+    struct hash<D3D12_PSO_DESC_TYPES>
     {
-        size_t operator()(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& key) const
+        size_t operator()(const D3D12_PSO_DESC_TYPES& key) const
         {
-            uint8_t* bytes = (uint8_t*)&key;
-
-            // TODO : Evaluate better hash methods
-            size_t hash_val = 42;
-            for (size_t i = 0; i < sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC); i++)
-            {
-                static_assert(sizeof(size_t) * 8 >= 53);
-                hash_val ^= hash<uint8_t>()(bytes[i]) << (i % 53);
-            }
-
-            return hash_val;
+            if (key.index() == 0)
+                return FrameDX12::HashBytes(std::get<0>(key));
+            else
+                return FrameDX12::HashBytes(std::get<1>(key));
         }
     };
 }
@@ -43,9 +49,11 @@ namespace FrameDX12
             mDevice(device)
         {}
 
+        // TODO : Remove the graphics one and use stream for all, converting is quite trivial with the d3dx_stream classes
         ID3D12PipelineState* GetPSO(const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc);
+        ID3D12PipelineState* GetPSO(const D3D12_PIPELINE_STATE_STREAM_DESC& desc);
 	private:
         Device* mDevice = nullptr;
-        std::unordered_map<D3D12_GRAPHICS_PIPELINE_STATE_DESC, ComPtr<ID3D12PipelineState>> mPool;
+        std::unordered_map<D3D12_PSO_DESC_TYPES, ComPtr<ID3D12PipelineState>> mPool;
 	};
 }
